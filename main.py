@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from core.database import init_db
+from core import init_db, log_debug
 import models
 
 
@@ -9,10 +9,10 @@ import models
 async def lifespan(app: FastAPI):
     # Startup: Create database tables
     await init_db()
-    print("Database initialized and tables created")
+    log_debug("Database initialized and tables created")
     yield
     # Shutdown: Add any cleanup here if needed
-    print("Application shutting down")
+    log_debug("Application shutting down")
 
 
 app = FastAPI(
