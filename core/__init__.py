@@ -1,5 +1,5 @@
 """
-Core module - Contains foundational utilities and configurations
+Core module
 """
 
 # Database utilities
@@ -15,10 +15,8 @@ from .database import (
 from .logger import (
     LOGGERS,
     setup_loggers,
-    get_database_logger,
     get_debug_logger,
     get_error_logger,
-    log_database_operation,
     log_error,
     log_debug
 )
@@ -35,10 +33,8 @@ __all__ = [
     # Logging
     "LOGGERS",
     "setup_loggers",
-    "get_database_logger",
     "get_debug_logger", 
     "get_error_logger",
-    "log_database_operation",
     "log_error",
     "log_debug"
 ]

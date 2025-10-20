@@ -1,0 +1,4 @@
+app.db
+logs/
+.venv
+*.pyc

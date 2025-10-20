@@ -27,8 +27,9 @@ app/
 │   └── property_images.py
 ├── core/                 #Core utilities
 │   ├── __init__.py
-│   ├── security.py
-│   └── database.py
+│   ├── database.py
+│   └── logger.py
+│   └── security.py
 └── tests/
     └── ...
 ```

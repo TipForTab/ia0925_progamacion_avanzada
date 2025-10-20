@@ -18,18 +18,6 @@ def setup_loggers() -> Dict[str, logging.Logger]:
     )
     loggers = {}
 
-    db_logger = logging.getLogger('database')
-    db_logger.setLevel(logging.INFO)
-    
-    db_handler = logging.handlers.RotatingFileHandler(
-        LOGS_DIR / 'database.log',
-        maxBytes=10*1024*1024,  # 10MB
-        backupCount=5
-    )
-    db_handler.setFormatter(formatter)
-    db_logger.addHandler(db_handler)
-    loggers['database'] = db_logger
-
     debug_logger = logging.getLogger('debug')
     debug_logger.setLevel(logging.DEBUG)
     
@@ -53,16 +41,11 @@ def setup_loggers() -> Dict[str, logging.Logger]:
     error_handler.setFormatter(formatter)
     error_logger.addHandler(error_handler)
     loggers['error'] = error_logger
-
     return loggers
 
 LOGGERS = setup_loggers()
 
 # Convenience functions for easy access
-def get_database_logger() -> logging.Logger:
-    """Get the database logger"""
-    return LOGGERS['database']
-
 def get_debug_logger() -> logging.Logger:
     """Get the debug logger"""
     return LOGGERS['debug']
@@ -73,9 +56,6 @@ def get_error_logger() -> logging.Logger:
 
 
 # Custom logging functions for common patterns
-def log_database_operation(operation: str, table: str, details: str = ""):
-    """Log database operations"""
-    get_database_logger().info(f"{operation} on {table}: {details}")
 
 def log_error(error: Exception, context: str = ""):
     """Log errors with context"""
