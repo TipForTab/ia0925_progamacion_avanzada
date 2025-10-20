@@ -1,13 +1,15 @@
 from sqlalchemy.orm import Session
-from typing import List, Optional, Dict, Any
+from sqlalchemy import and_, or_, func
+from typing import List, Optional, Dict, Any, Union
 
+from models import Property
 from models.property import Property
 from core import log_debug
 
 
 class PropertyQueryBuilder:
     """
-    Chainable query builder for Property filtering
+    Chainable query builder for Property filtering with aggregation support
     """
 
     def __init__(self, db: Session, query=None):
@@ -219,6 +221,83 @@ class PropertyQueryBuilder:
         self._pagination_limit = limit
         return self
 
+    # Aggregation methods
+    def aggregate_price_stats(self) -> Dict[str, float]:
+        """
+        Get price statistics for current query filters
+        Returns min, max, avg price and count without loading all records
+        """
+        result = self.query.with_entities(
+            func.min(Property.price).label('min_price'),
+            func.max(Property.price).label('max_price'),
+            func.avg(Property.price).label('avg_price'),
+            func.count(Property.id).label('count')
+        ).first()
+
+        return {
+            'min_price': float(result.min_price) if result.min_price else 0,
+            'max_price': float(result.max_price) if result.max_price else 0,
+            'avg_price': float(result.avg_price) if result.avg_price else 0,
+            'count': int(result.count) if result.count else 0
+        }
+
+    def aggregate_by_field(self, field_name: str, aggregations: List[str] = None) -> Dict[str, Any]:
+        """
+        Generic aggregation method for any numeric field
+
+        Args:
+            field_name: Name of the field to aggregate (e.g., 'price', 'square_meters', 'rooms')
+            aggregations: List of aggregation functions ['min', 'max', 'avg', 'sum', 'count']
+
+        Returns:
+            Dictionary with aggregation results
+        """
+        if aggregations is None:
+            aggregations = ['min', 'max', 'avg', 'count']
+
+        field = getattr(Property, field_name)
+        agg_functions = []
+
+        for agg in aggregations:
+            if agg == 'min':
+                agg_functions.append(func.min(field).label(f'min_{field_name}'))
+            elif agg == 'max':
+                agg_functions.append(func.max(field).label(f'max_{field_name}'))
+            elif agg == 'avg':
+                agg_functions.append(func.avg(field).label(f'avg_{field_name}'))
+            elif agg == 'sum':
+                agg_functions.append(func.sum(field).label(f'sum_{field_name}'))
+            elif agg == 'count':
+                agg_functions.append(func.count(Property.id).label('count'))
+
+        result = self.query.with_entities(*agg_functions).first()
+
+        output = {}
+        for i, agg in enumerate(aggregations):
+            value = result[i]
+            key = f'{agg}_{field_name}' if agg != 'count' else 'count'
+            output[key] = float(value) if value is not None and agg != 'count' else (int(value) if value else 0)
+
+        return output
+
+    def group_count_by(self, field_name: str) -> Dict[Any, int]:
+        """
+        Count properties grouped by a field
+
+        Args:
+            field_name: Field to group by (e.g., 'is_apartment', 'rooms', 'bathrooms')
+
+        Returns:
+            Dictionary mapping field values to counts
+        """
+        field = getattr(Property, field_name)
+        results = self.query.with_entities(
+            field,
+            func.count(Property.id).label('count')
+        ).group_by(field).all()
+
+        return {value: count for value, count in results}
+
     # Execution methods
     def first(self) -> Optional[Property]:
         """Get the first result"""
@@ -257,9 +336,10 @@ class PropertyRepository:
 
     # Define which methods should NOT be delegated (repository-specific methods)
     _NON_DELEGATED_METHODS = {
-        'query', 'get_by_id', 'get_all', 'get_available',
+        'query', 'get_by_id', 'get_all', 'get_available', 'get_by_source_url',
         'create', 'update', 'delete', 'soft_delete',
-        'bulk_update_availability', 'count_total', 'count_available', 'count_by_type'
+        'bulk_update_availability', 'count_total', 'count_available', 'count_by_type',
+        'advanced_search', 'get_price_statistics', 'get_field_statistics'
     }
 
     def __init__(self, db: Session):
@@ -272,6 +352,7 @@ class PropertyRepository:
     def __getattr__(self, name: str):
         """
         Automatically delegate filter_* and order_* methods to a new query builder.
+        This eliminates the need for wrapper methods in the repository.
         """
         if name.startswith(('filter_', 'order_')) and name not in self._NON_DELEGATED_METHODS:
             # Return a function that creates a new query builder and calls the method
@@ -296,6 +377,10 @@ class PropertyRepository:
     def get_available(self, skip: int = 0, limit: int = 100) -> List[Property]:
         """Get available properties"""
         return self.query().filter_by_availability(True).skip(skip).limit(limit).all()
+
+    def get_by_source_url(self, source_url: str) -> Optional[Property]:
+        """Get property by source URL"""
+        return self.query().filter_by_source_url(source_url, exact=True).first()
 
     # CRUD operations
     def create(self, property_data: dict) -> Property:
@@ -362,3 +447,148 @@ class PropertyRepository:
             "apartments": self.query().filter_by_apartment().count(),
             "houses": self.query().filter_by_house().count()
         }
+
+    def get_price_statistics(self, available_only: bool = True) -> Dict[str, float]:
+        """
+        Get price statistics using query builder aggregation
+
+        Args:
+            available_only: If True, only calculate stats for available properties
+
+        Returns:
+            Dictionary with min, max, avg price and count
+        """
+        query = self.query()
+
+        if available_only:
+            query = query.filter_by_availability(True)
+
+        return query.aggregate_price_stats()
+
+    def get_field_statistics(
+            self,
+            field_name: str,
+            filters: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """
+        Get statistics for any numeric field with optional filters
+
+        Args:
+            field_name: Name of field to aggregate (e.g., 'square_meters', 'rooms')
+            filters: Optional filters to apply before aggregation
+
+        Returns:
+            Dictionary with min, max, avg, count for the field
+        """
+        query = self.query()
+
+        # Apply filters if provided
+        if filters:
+            if filters.get('is_available') is not None:
+                query = query.filter_by_availability(filters['is_available'])
+            if filters.get('is_apartment') is not None:
+                query = query.filter_by_apartment(filters['is_apartment'])
+            if filters.get('is_house') is not None:
+                query = query.filter_by_house(filters['is_house'])
+
+        return query.aggregate_by_field(field_name)
+
+    def advanced_search(self, filters: Dict[str, Any]) -> List[Property]:
+        """
+        Advanced search with dynamic filters
+        Translates a filter dictionary into chainable query builder calls
+        """
+        query = self.query()
+
+        # Property type filters
+        if filters.get('is_apartment') is not None:
+            query = query.filter_by_apartment(filters['is_apartment'])
+        if filters.get('is_house') is not None:
+            query = query.filter_by_house(filters['is_house'])
+
+        # Price filters
+        min_price = filters.get('min_price')
+        max_price = filters.get('max_price')
+        if min_price is not None or max_price is not None:
+            query = query.filter_by_price_range(min_price, max_price)
+
+        # Room filters
+        min_rooms = filters.get('min_rooms')
+        max_rooms = filters.get('max_rooms')
+        if filters.get('rooms') is not None:
+            query = query.filter_by_rooms_exact(filters['rooms'])
+        elif min_rooms is not None or max_rooms is not None:
+            query = query.filter_by_rooms(min_rooms, max_rooms)
+
+        # Bathroom filters
+        min_bathrooms = filters.get('min_bathrooms')
+        max_bathrooms = filters.get('max_bathrooms')
+        if filters.get('bathrooms') is not None:
+            query = query.filter_by_bathrooms_exact(filters['bathrooms'])
+        elif min_bathrooms is not None or max_bathrooms is not None:
+            query = query.filter_by_bathrooms(min_bathrooms, max_bathrooms)
+
+        # Square meters filters
+        min_sqm = filters.get('min_square_meters')
+        max_sqm = filters.get('max_square_meters')
+        if min_sqm is not None or max_sqm is not None:
+            query = query.filter_by_square_meters(min_sqm, max_sqm)
+
+        # Location filters
+        if filters.get('address'):
+            query = query.filter_by_address(filters['address'], exact=False)
+
+        if filters.get('title'):
+            query = query.filter_by_title(filters['title'], exact=False)
+
+        # Floor filters
+        if filters.get('floor') is not None:
+            query = query.filter_by_floor(filters['floor'])
+
+        min_floor = filters.get('min_floor')
+        max_floor = filters.get('max_floor')
+        if min_floor is not None or max_floor is not None:
+            query = query.filter_by_floor_range(min_floor, max_floor)
+
+        # Availability filter
+        if filters.get('is_available') is not None:
+            query = query.filter_by_availability(filters['is_available'])
+
+        # Amenities filter
+        if filters.get('amenity'):
+            query = query.filter_by_amenities(filters['amenity'])
+
+        # Images filter
+        if filters.get('has_images') is not None:
+            query = query.filter_with_images(filters['has_images'])
+
+        # Date filters
+        if filters.get('start_date') or filters.get('end_date'):
+            date_field = filters.get('date_field', 'created_at')
+            query = query.filter_by_date_range(
+                filters.get('start_date'),
+                filters.get('end_date'),
+                date_field
+            )
+
+        # Ordering
+        order_by = filters.get('order_by', 'created_at')
+        ascending = filters.get('ascending', False)
+
+        if order_by == 'price':
+            query = query.order_by_price(ascending)
+        elif order_by == 'rooms':
+            query = query.order_by_rooms(ascending)
+        elif order_by == 'square_meters':
+            query = query.order_by_square_meters(ascending)
+        elif order_by == 'updated_at':
+            query = query.order_by_updated_at(ascending)
+        else:  # default to created_at
+            query = query.order_by_created_at(ascending)
+
+        # Pagination
+        skip = filters.get('skip', 0)
+        limit = filters.get('limit', 100)
+        query = query.skip(skip).limit(limit)
+
+        return query.all()
