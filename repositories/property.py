@@ -420,6 +420,13 @@ class PropertyRepository:
         self.db.add(db_property)
         await self.db.commit()
         await self.db.refresh(db_property)
+
+        # Reload with images relationship eagerly loaded
+        result = await self.db.execute(
+            select(Property).options(selectinload(Property.images)).where(Property.id == db_property.id)
+        )
+        db_property = result.scalar_one()
+
         log_debug("Property created successfully", {"property_id": db_property.id})
         return db_property
 
