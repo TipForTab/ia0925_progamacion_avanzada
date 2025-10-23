@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 from core import init_db, log_debug
-from routers import property_router
+from routers import property_router, property_image_router
 
 
 @asynccontextmanager
@@ -34,6 +34,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(property_router)
+app.include_router(property_image_router)
 
 # Root endpoint
 @app.get("/")

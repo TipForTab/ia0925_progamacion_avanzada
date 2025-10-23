@@ -41,10 +41,6 @@ async def create_property(
     return await service.create_property(property_data)
 
 
-# ============================================================================
-# READ ENDPOINTS
-# ============================================================================
-
 @router.get(
     "/",
     response_model=List[PropertyResponse],
@@ -209,10 +205,6 @@ async def bulk_update_availability(
     """
     return await service.bulk_update_availability(bulk_data)
 
-
-# ============================================================================
-# STATISTICS ENDPOINT
-# ============================================================================
 
 @router.get(
     "/statistics/summary",
