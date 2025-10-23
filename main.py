@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 from core import init_db, log_debug
-import models
+from routers import property_router
 
 
 @asynccontextmanager
@@ -23,12 +24,32 @@ app = FastAPI(
 )
 
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Change for Production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# Include routers
+app.include_router(property_router)
+
+# Root endpoint
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {
+        "message": "Property Management API",
+        "version": "1.0.0",
+        "docs": "/docs"
+    }
+
+# Health check
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
 
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
