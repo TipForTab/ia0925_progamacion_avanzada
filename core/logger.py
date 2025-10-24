@@ -45,7 +45,6 @@ def setup_loggers() -> Dict[str, logging.Logger]:
 
 LOGGERS = setup_loggers()
 
-# Convenience functions for easy access
 def get_debug_logger() -> logging.Logger:
     """Get the debug logger"""
     return LOGGERS['debug']
@@ -53,9 +52,6 @@ def get_debug_logger() -> logging.Logger:
 def get_error_logger() -> logging.Logger:
     """Get the error logger"""
     return LOGGERS['error']
-
-
-# Custom logging functions for common patterns
 
 def log_error(error: Exception, context: str = ""):
     """Log errors with context"""

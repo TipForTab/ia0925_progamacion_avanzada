@@ -23,14 +23,11 @@ from .logger import (
 
 # Full module
 __all__ = [
-    # Database
     "Base",
     "get_async_db",
     "init_db",
     "create_tables",
     "drop_tables",
-    
-    # Logging
     "LOGGERS",
     "setup_loggers",
     "get_debug_logger", 

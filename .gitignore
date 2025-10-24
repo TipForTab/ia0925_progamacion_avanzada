@@ -2,3 +2,4 @@ app.db
 logs/
 .venv
 *.pyc
+.idea/

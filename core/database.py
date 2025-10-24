@@ -38,7 +38,7 @@ if ENV == "production":
     )
     
 else:
-    # SQLite configuration for development
+    # SQLite for development
     DATABASE_URL = "sqlite+aiosqlite:///./app.db"
     engine = create_async_engine(
         DATABASE_URL,

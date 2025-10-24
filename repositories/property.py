@@ -237,7 +237,7 @@ class PropertyQueryBuilder:
             func.count(Property.id).label('count')
         )
 
-        # Copy WHERE clauses from current statement
+        # WHERE clauses from current statement
         if self.stmt.whereclause is not None:
             agg_stmt = agg_stmt.where(self.stmt.whereclause)
 
@@ -353,7 +353,6 @@ class PropertyQueryBuilder:
         result = await self.first()
         return result is not None
 
-    # Raw query access
     def get_query(self):
         """Get the raw SQLAlchemy statement object"""
         return self.stmt
@@ -361,11 +360,11 @@ class PropertyQueryBuilder:
 
 class PropertyRepository:
     """
-    Async repository with automatic delegation to PropertyQueryBuilder for filter methods.
-    Handles CRUD operations, statistics, and bulk operations directly.
+    Repository with automatic delegation to PropertyQueryBuilder for filter methods.
+    Handles CRUD operations, statistics and bulk operations directly.
     """
 
-    # Define which methods should NOT be delegated (repository-specific methods)
+    # These methods should NOT be delegated
     _NON_DELEGATED_METHODS = {
         'query', 'get_by_id', 'get_all', 'get_available', 'get_by_source_url',
         'create', 'update', 'delete', 'soft_delete',
@@ -396,7 +395,6 @@ class PropertyRepository:
 
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
-    # Legacy convenience methods for backward compatibility
     async def get_by_id(self, property_id: int) -> Optional[Property]:
         """Get property by ID"""
         return await self.query().filter_by_id(property_id).first()
@@ -413,7 +411,7 @@ class PropertyRepository:
         """Get property by source URL"""
         return await self.query().filter_by_source_url(source_url, exact=True).first()
 
-    # CRUD operations
+    # CRUD
     async def create(self, property_data: dict) -> Property:
         """Create a new property"""
         db_property = Property(**property_data)
