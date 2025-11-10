@@ -1,9 +1,9 @@
 from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, Query, status
 
-from dependencies import get_property_service
-from services import PropertyService
-from schemas.property import (
+from src.dependencies import get_property_service
+from src.services import PropertyService
+from src.schemas.property import (
     PropertyCreate,
     PropertyUpdate,
     PropertyResponse,

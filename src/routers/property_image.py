@@ -1,9 +1,9 @@
 from typing import List, Dict, Any
-from fastapi import APIRouter, Depends, Query, status, HTTPException
+from fastapi import APIRouter, Depends, Query, status
 
-from dependencies import get_image_service
-from services import ImageService
-from schemas import (
+from src.dependencies import get_image_service
+from src.services import ImageService
+from src.schemas import (
     ImageCreate,
     ImageUpdate,
     ImageResponse,

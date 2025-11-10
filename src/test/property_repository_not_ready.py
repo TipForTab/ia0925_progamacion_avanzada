@@ -1,6 +1,6 @@
 import pytest
-from test.property_fixtures import get_seville_property_fixtures, get_specific_test_properties
-from repositories import PropertyQueryBuilder, PropertyRepository
+from src.test.property_fixtures import get_seville_property_fixtures, get_specific_test_properties
+from src.repositories import PropertyQueryBuilder, PropertyRepository
 
 
 class TestPropertyQueryBuilder:

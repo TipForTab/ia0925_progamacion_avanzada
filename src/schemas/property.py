@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from schemas.property_image import ImageResponse
+from src.schemas.property_image import ImageResponse
 
 
 class PropertyBase(BaseModel):

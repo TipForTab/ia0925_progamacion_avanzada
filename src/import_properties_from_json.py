@@ -3,10 +3,9 @@ import json
 import re
 from pathlib import Path
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from core.database import AsyncSessionLocal, init_db
-from models.property import Property
-from core import log_debug, log_error
+from src.core import AsyncSessionLocal, init_db
+from src.models import Property
+from src.core import log_error
 
 
 def parse_price(price_str: str) -> float:

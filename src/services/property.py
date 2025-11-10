@@ -3,15 +3,15 @@ from functools import wraps
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 
-from repositories.property import PropertyRepository
-from schemas.property import (
+from src.repositories.property import PropertyRepository
+from src.schemas.property import (
     PropertyCreate,
     PropertyUpdate,
     PropertyResponse,
     PropertySearchFilters,
     BulkUpdateAvailability
 )
-from core import log_error, log_debug
+from src.core import log_error, log_debug
 
 
 def handle_service_errors(operation_name: str):
