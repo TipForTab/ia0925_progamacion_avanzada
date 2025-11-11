@@ -51,9 +51,5 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Health check using the simple script
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python /app/healthcheck.py
-
 # Run the application
-CMD ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python",  "./src/main.py"]

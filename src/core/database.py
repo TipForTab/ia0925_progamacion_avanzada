@@ -51,6 +51,7 @@ async def check_db_health():
 
 Base = declarative_base()
 # Determine database configuration based on settings
+print(f'USING DATABASE_URL {settings.database_url} -- settings.is_production {settings.is_production}')
 if settings.is_production or settings.database_url.startswith("postgresql"):
     # Use PostgreSQL with asyncpg
     if settings.database_url.startswith("postgresql://"):
@@ -58,6 +59,7 @@ if settings.is_production or settings.database_url.startswith("postgresql"):
         database_url = settings.database_url.replace("postgresql://", "postgresql+asyncpg://")
     else:
         database_url = settings.database_url
+
 
     # Async engine for PostgreSQL with connection pool
     engine = create_async_engine(
@@ -90,7 +92,6 @@ else:
         database_url = settings.database_url.replace("sqlite:///", "sqlite+aiosqlite:///")
     else:
         database_url = settings.database_url
-
     engine = create_async_engine(
         database_url,
         echo=settings.is_development,

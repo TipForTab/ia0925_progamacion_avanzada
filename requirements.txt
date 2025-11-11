@@ -24,6 +24,7 @@ pytest==8.4.2
 pytest-asyncio==1.2.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.0
+pydantic-settings==2.11.0
 pytz==2025.2
 regex==2025.11.3
 six==1.17.0

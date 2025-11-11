@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field, field_validator, model_validator
+import re
+
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from src.schemas.property_image import ImageResponse
@@ -112,6 +114,25 @@ class PropertyResponse(PropertyBase):
 
     class Config:
         from_attributes = True
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def _parse_dt(cls, v):
+        if isinstance(v, str):
+            s = v.strip()
+            # insert 'T' between date and time if it's missing
+            if re.match(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}", s):
+                s = s.replace(" ", "T", 1)
+            # turn "+00" into "+00:00"
+            if s.endswith("+00"):
+                s = s + ":00"
+            try:
+                return datetime.fromisoformat(s)
+            except ValueError:
+                # optional fallback if you have python-dateutil installed
+                from dateutil.parser import isoparse
+                return isoparse(s)
+        return v
 
 
 class PropertySearchFilters(BaseModel):
