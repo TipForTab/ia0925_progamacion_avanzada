@@ -3,8 +3,8 @@ from sqlalchemy import select, func, update as sql_update
 from sqlalchemy.orm import selectinload
 from typing import List, Optional, Dict, Any
 
-from models.property import Property
-from core import log_debug
+from src.models.property import Property
+from src.core import log_debug
 
 
 class PropertyQueryBuilder:

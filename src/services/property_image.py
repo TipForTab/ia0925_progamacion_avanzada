@@ -3,16 +3,16 @@ from functools import wraps
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 
-from repositories import ImageRepository
-from repositories.property import PropertyRepository
-from schemas import (
+from src.repositories import ImageRepository
+from src.repositories.property import PropertyRepository
+from src.schemas import (
     ImageCreate,
     ImageUpdate,
     ImageResponse,
     ImageBulkCreate,
     ImageTagsUpdate
 )
-from core import log_error, log_debug
+from src.core import log_error, log_debug
 
 
 def handle_service_errors(operation_name: str):

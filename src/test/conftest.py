@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from typing import AsyncGenerator
 
-from main import app
-from core.database import Base, get_async_db
-from repositories.property import PropertyRepository
+from src.main import app
+from src.core import Base, get_async_db
+from src.repositories import PropertyRepository
 
 
 pytest_plugins = ('pytest_asyncio',)

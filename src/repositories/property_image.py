@@ -3,8 +3,8 @@ from sqlalchemy import select, func, update as sql_update, delete as sql_delete
 from sqlalchemy.orm import selectinload
 from typing import List, Optional, Dict, Any
 
-from models import Image
-from core import log_debug
+from src.models import Image
+from src.core import log_debug
 
 
 class ImageQueryBuilder:

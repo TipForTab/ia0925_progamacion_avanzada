@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Text, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Boolean, Text, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from core.database import Base
+from src.core.database import Base
 
 
 class Property(Base):
