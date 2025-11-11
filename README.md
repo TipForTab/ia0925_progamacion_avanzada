@@ -4,7 +4,23 @@
 
 API para gestión de propiedades inmobiliarias con FastAPI.
 
-## 📦 Instalación
+## 📦 Instalación y ejecución con docker
+
+```bash
+# Correr con pgadmin e importer de propiedades (recomendado)
+docker compose --profile tools up --build -d
+
+# Sin Pgadmin ni importer de propiedades
+docker compose up --build -d
+```
+![api_runs_on_8080.png](api_runs_on_8080.png)
+![pgadmin_connected_to_docker_postgres.png](pgadmin_connected_to_docker_postgres.png)
+![pg_admin_settings.png](pg_admin_settings.png)
+![docker_desktop.png](docker_desktop.png)
+![logs.png](logs.png)
+
+
+## 📦 Instalación sin docker
 
 ```bash
 # Crear entorno virtual (recomendado)
