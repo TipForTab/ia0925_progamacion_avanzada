@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     algorithm: str = Field(default="HS256", env="ALGORITHM")
     access_token_expire_minutes: int = Field(default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
 
+    # JWT Configuration
+    secret_key: str = Field(default="your-secret-key-change-in-production", env="SECRET_KEY")
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+
     # CORS settings
     allowed_origins: str = Field(default="*", env="ALLOWED_ORIGINS")
 
