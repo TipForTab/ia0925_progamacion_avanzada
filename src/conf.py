@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     pgadmin_password: Optional[str] = Field(default=None, env="PGADMIN_PASSWORD")
     pgadmin_port: Optional[int] = Field(default=None, env="PGADMIN_PORT")
 
+    # Data extraction service settings
+    data_extraction_url: Optional[str] = Field(default="http://data-extraction:8000", env="DATA_EXTRACTION_URL")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

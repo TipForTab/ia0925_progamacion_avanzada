@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from pydantic import BaseModel
+import httpx
 
 from src.conf import settings
 from src.core.database import init_db, check_db_health
@@ -9,6 +11,13 @@ from src.routers import property_router, property_image_router, auth_router
 
 # Load environment variables from .env file
 load_dotenv()
+
+# External service URLs
+DATA_EXTRACTION_URL = settings.data_extraction_url if hasattr(settings, 'data_extraction_url') else "http://data-extraction:8000"
+
+
+class ExtractionRequest(BaseModel):
+    text: str
 
 
 @asynccontextmanager
@@ -74,6 +83,30 @@ async def health():
         }
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Health check failed: {str(e)}")
+
+
+@app.post("/extract")
+async def extract_data(request: ExtractionRequest):
+    """
+    Extract structured data from free text using the data extraction service.
+    """
+    print(f"Parsing data from text...{DATA_EXTRACTION_URL}")
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{DATA_EXTRACTION_URL}/extract",
+                json={"text": request.text}
+            )
+            response.raise_for_status()
+            return response.json()
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Data extraction service timed out")
+    except httpx.ConnectError:
+        raise HTTPException(status_code=503, detail="Data extraction service unavailable")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Extraction failed: {e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Extraction error: {str(e)}")
 
 
 if __name__ == "__main__":

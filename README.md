@@ -113,3 +113,14 @@ app/
     └── test_property_image_crud.py
 ```
 
+# Agregar Microservicios en local
+
+# Add as a submodule in your project root
+git submodule add https://github.com/dgorozz/data-extraction-service.git modules/data-extraction-service
+
+# Initialize and fetch
+git submodule update --init --recursive
+
+# Correr con Microservicios en local
+docker compose -f docker-compose-full.yml up --build
+docker compose -f docker-compose-full.yml down 
