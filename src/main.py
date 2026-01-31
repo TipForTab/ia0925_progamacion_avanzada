@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 from src.conf import settings
 from src.core.database import init_db, check_db_health
-from src.routers import property_router, property_image_router
+from src.routers import property_router, property_image_router, auth_router
 
 # Load environment variables from .env file
 load_dotenv()
@@ -42,6 +42,7 @@ app.add_middleware(
 # Include routers
 app.include_router(property_router)
 app.include_router(property_image_router)
+app.include_router(auth_router)
 
 
 # Root endpoint

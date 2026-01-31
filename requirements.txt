@@ -41,3 +41,8 @@ uvicorn==0.37.0
 # PostgreSQL support
 asyncpg==0.29.0
 psycopg2-binary==2.9.9
+# JWT Authentication
+python-jose==3.3.0
+cryptography==43.0.0
+passlib==1.7.4
+python-multipart==0.0.6
