@@ -83,7 +83,7 @@ services:
     networks:
       - property_network
     command: >
-      python -u ./src/import_properties_from_json.py
+      python -u ./src/data_seeder.py
     restart: "no"
     profiles:
       - tools
