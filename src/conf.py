@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     api_host: str = Field(default="0.0.0.0", env="API_HOST")
     api_port: int = Field(default=8080, env="API_PORT")
 
+    # External services
+    data_extraction_url: str = Field(default="http://localhost:8000", env="DATA_EXTRACTION_URL")
+
+    # Internal califier json
+    califier_url: str = Field(default="http://localhost:8080", env="CALIFIER_URL")
+
     # Security settings
     secret_key: str = Field(default="dev-secret-key", env="SECRET_KEY")
     algorithm: str = Field(default="HS256", env="ALGORITHM")

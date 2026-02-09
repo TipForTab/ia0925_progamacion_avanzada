@@ -2,33 +2,34 @@ from fastapi import FastAPI, HTTPException
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from pydantic import BaseModel
-import httpx
 
 from src.conf import settings
 from src.core.database import init_db, check_db_health
+
+# Routers existentes
 from src.routers import property_router, property_image_router, auth_router
+
+# Routers nuevos (orquestación)
+from src.routers import extract_data_router, califier_router, jobs_router
+
 
 # Load environment variables from .env file
 load_dotenv()
 
-# External service URLs
-DATA_EXTRACTION_URL = settings.data_extraction_url if hasattr(settings, 'data_extraction_url') else "http://data-extraction:8000"
-
-
-class ExtractionRequest(BaseModel):
-    text: str
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Create database tables
+    # Startup
     print(f"Starting application in {settings.environment} mode...")
     print(f"Database URL: {settings.database_url}")
+
+    # Si no quieres init_db en dev, comenta esta línea.
     await init_db()
+
     print("Database initialized and tables created")
     yield
-    # Shutdown: Add any cleanup here if needed
+
+    # Shutdown
     print("Application shutting down")
 
 
@@ -39,7 +40,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware with settings from .env
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
@@ -48,11 +49,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# ======================
+# Include existing routers
+# ======================
 app.include_router(property_router)
 app.include_router(property_image_router)
 app.include_router(auth_router)
 
+# ======================
+# Include orchestration routers
+# ======================
+app.include_router(extract_data_router)   # /extract-data/...
+app.include_router(califier_router)        # /internal/califier (stub)
+app.include_router(jobs_router)           # /jobs/{job_id}
 
 # Root endpoint
 @app.get("/")
@@ -64,14 +73,11 @@ async def root():
         "docs": "/docs"
     }
 
-
 # Health check endpoint
 @app.get("/health")
 async def health():
     try:
-        # Check database connectivity
         db_healthy = await check_db_health()
-
         if not db_healthy:
             raise HTTPException(status_code=503, detail="Database connection failed")
 
@@ -83,30 +89,6 @@ async def health():
         }
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Health check failed: {str(e)}")
-
-
-@app.post("/extract")
-async def extract_data(request: ExtractionRequest):
-    """
-    Extract structured data from free text using the data extraction service.
-    """
-    print(f"Parsing data from text...{DATA_EXTRACTION_URL}")
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                f"{DATA_EXTRACTION_URL}/extract",
-                json={"text": request.text}
-            )
-            response.raise_for_status()
-            return response.json()
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Data extraction service timed out")
-    except httpx.ConnectError:
-        raise HTTPException(status_code=503, detail="Data extraction service unavailable")
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=f"Extraction failed: {e.response.text}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Extraction error: {str(e)}")
 
 
 if __name__ == "__main__":
