@@ -1,591 +1,588 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-batch_parse_idealista_full_json.py
-
-Reads ALL .html/.htm files under ./source_html (recursively), extracts rich
-listing data PLUS every image URL it can find, and prints a single JSON to stdout.
-
-Output format (printed to stdout):
-[
-  {
-    "file": "relative/path/to/file.html",
-    "url": "...",
-    "listing_id": "...",
-    "title": "...",
-    "price": 123456,
-    "price_text": "123.456 €",
-    "address": {
-      "full": "...",
-      "street": "...",
-      "neighborhood": "...",
-      "district": "...",
-      "municipality": "...",
-      "province": "...",
-      "postal_code": "..."
-    },
-    "geo": {"lat": 40.123, "lng": -3.456},
-    "features": {
-      "bedrooms": 3,
-      "bathrooms": 2,
-      "size_m2": 120,
-      "floor": "3ª",
-      "has_elevator": true,
-      "has_terrace": false,
-      "energy_cert": "D",
-      "year_built": 1999,
-      "housing_type": "flat|duplex|chalet|...",
-      "parking": "yes|no|optional",
-      "other": ["...","..."]   # any extra raw labels we see
-    },
-    "description": "...",
-    "agency": {
-      "name": "...",
-      "phone": "...",
-      "is_professional": true
-    },
-    "images": ["https://...", "...", ...]
-  },
-  ...
-]
-
-Requires:
-  pip install beautifulsoup4
-
-Run:
-  python batch_parse_idealista_full_json.py  > out.json
+Property Data Extractor
+Extracts property information from local HTML files (Idealista format)
 """
 
+from bs4 import BeautifulSoup
 import json
-import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
+from dataclasses import dataclass, asdict
 
-try:
-    from bs4 import BeautifulSoup
-except ImportError:
-    sys.stderr.write("This script requires beautifulsoup4. Install with: pip install beautifulsoup4\n")
-    sys.exit(1)
 
-SRC_ROOT = Path("source_html")
-HTML_GLOB = "**/*.htm*"
+@dataclass
+class PropertyData:
+    """Data class to hold extracted property information."""
+    title: Optional[str] = None
+    price: Optional[str] = None
+    operation_type: Optional[str] = None  # 'rent' or 'sale'
+    property_type: Optional[str] = None  # 'apartment' or 'house'
+    location: Optional[Dict[str, str]] = None
+    features: List[str] = None
+    description: Optional[str] = None
+    images: List[str] = None
+    
+    def __post_init__(self):
+        """Initialize mutable defaults."""
+        if self.features is None:
+            self.features = []
+        if self.images is None:
+            self.images = []
+        if self.location is None:
+            self.location = {}
+    
+    def to_dict(self) -> Dict:
+        """Convert to dictionary."""
+        return asdict(self)
+    
+    def to_json(self, indent: int = 2) -> str:
+        """Convert to JSON string."""
+        return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
 
-# ---------- Utilities ----------
 
-IMG_EXT_PATTERN = r"\.(?:jpg|jpeg|png|webp)\b"
-URL_PATTERN = rf"https?://[^\s\"'>]+{IMG_EXT_PATTERN}(?:[^\s\"'>]*)"
-URL_RE = re.compile(URL_PATTERN, re.IGNORECASE)
-
-SRCSET_SPLIT_RE = re.compile(r"\s*,\s*")
-SRCSET_URL_RE = re.compile(r"^\s*(\S+)\s*(?:\s+\d+[wx])?$", re.IGNORECASE)
-
-LIKELY_IMG_HOSTS = (
-    "img1.idealista.com", "img2.idealista.com", "img3.idealista.com", "img4.idealista.com",
-    "st1.idealista.com", "st2.idealista.com", "st3.idealista.com", "st.idealista.com",
-    "images.idealista.com", "multimedia.idealista.com",
-)
-
-def clean_text(x: Optional[str]) -> str:
-    if not x:
-        return ""
-    return re.sub(r"\s+", " ", x).strip()
-
-def to_int_safe(text: Optional[str]) -> Optional[int]:
-    if not text:
+class PropertyExtractor:
+    """Extracts property data from HTML files."""
+    
+    def __init__(self, html_path: str):
+        """
+        Initialize the extractor.
+        
+        Args:
+            html_path: Path to the HTML file
+        """
+        self.html_path = Path(html_path)
+        self.soup: Optional[BeautifulSoup] = None
+        self._load_html()
+    
+    def _load_html(self) -> None:
+        """Load and parse the HTML file."""
+        if not self.html_path.exists():
+            raise FileNotFoundError(f"File not found: {self.html_path}")
+        
+        with open(self.html_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        
+        self.soup = BeautifulSoup(html_content, 'html.parser')
+    
+    def extract(self) -> PropertyData:
+        """
+        Extract all property data.
+        
+        Returns:
+            PropertyData object with extracted information
+        """
+        if not self.soup:
+            raise ValueError("HTML not loaded")
+        
+        return PropertyData(
+            title=self._extract_title(),
+            price=self._extract_price(),
+            operation_type=self._extract_operation_type(),
+            property_type=self._extract_property_type(),
+            location=self._extract_location(),
+            features=self._extract_features(),
+            description=self._extract_description(),
+            images=self._extract_images(),
+        )
+    
+    def _extract_title(self) -> Optional[str]:
+        """Extract property title from .main-info__title."""
+        title_container = self.soup.select_one('.main-info__title')
+        if not title_container:
+            return None
+        
+        # Get main title
+        main_title = title_container.select_one('.main-info__title-main')
+        minor_title = title_container.select_one('.main-info__title-minor')
+        
+        parts = []
+        if main_title:
+            parts.append(main_title.get_text(strip=True))
+        if minor_title:
+            parts.append(minor_title.get_text(strip=True))
+        
+        return ', '.join(parts) if parts else None
+    
+    def _extract_price(self) -> Optional[str]:
+        """Extract property price from .info-data."""
+        price_element = self.soup.select_one('.info-data .info-data-price')
+        if price_element:
+            return price_element.get_text(strip=True)
+        
+        # Fallback to .info-data if specific price element not found
+        price_container = self.soup.select_one('.info-data')
+        if price_container:
+            return price_container.get_text(strip=True)
+        
         return None
-    t = text.replace(".", "").replace(",", "").replace("€", "").replace("\xa0", " ")
-    m = re.search(r"(-?\d+)", t)
-    if not m:
+    
+    def _extract_operation_type(self) -> Optional[str]:
+        """
+        Determine if property is for rent or sale.
+        
+        Returns:
+            'rent', 'sale', or None if cannot determine
+        """
+        # Check title first
+        title = self._extract_title()
+        if title:
+            title_lower = title.lower()
+            if 'alquiler' in title_lower:
+                return 'rent'
+            elif 'venta' in title_lower or 'compra' in title_lower:
+                return 'sale'
+        
+        # Check page title as fallback
+        page_title = self.soup.find('title')
+        if page_title:
+            title_text = page_title.get_text().lower()
+            if 'alquiler' in title_text:
+                return 'rent'
+            elif 'venta' in title_text or 'compra' in title_text:
+                return 'sale'
+        
         return None
-    try:
-        return int(m.group(1))
-    except Exception:
+    
+    def _extract_property_type(self) -> Optional[str]:
+        """
+        Determine if property is a house or apartment.
+        
+        Returns:
+            'apartment', 'house', or None if cannot determine
+        """
+        # Check typology tag first (most reliable)
+        typology = self.soup.select_one('.typology')
+        if typology:
+            type_text = typology.get_text(strip=True).lower()
+            
+            # Apartment types
+            if any(word in type_text for word in ['piso', 'apartamento', 'ático', 'dúplex', 'estudio']):
+                return 'apartment'
+            
+            # House types
+            if any(word in type_text for word in ['casa', 'chalet', 'villa', 'adosado', 'unifamiliar']):
+                return 'house'
+        
+        # Fallback: check title
+        title = self._extract_title()
+        if title:
+            title_lower = title.lower()
+            
+            # Apartment types
+            if any(word in title_lower for word in ['piso', 'apartamento', 'ático', 'dúplex', 'estudio']):
+                return 'apartment'
+            
+            # House types
+            if any(word in title_lower for word in ['casa', 'chalet', 'villa', 'adosado', 'unifamiliar']):
+                return 'house'
+        
         return None
+    
+    def _extract_location(self) -> Dict[str, str]:
+        """
+        Extract location information from #headerMap.
+        
+        Returns:
+            Dictionary with location details (street, neighborhood, district, city, etc.)
+        """
+        location = {}
+        
+        header_map = self.soup.select_one('#headerMap')
+        if not header_map:
+            return location
+        
+        # Get all list items
+        list_items = header_map.select('li.header-map-list')
+        
+        # Map positions to keys (based on typical Idealista structure)
+        keys = ['street', 'neighborhood', 'district', 'city', 'province']
+        
+        for i, item in enumerate(list_items):
+            text = item.get_text(strip=True)
+            if text and i < len(keys):
+                location[keys[i]] = text
+        
+        return location
+    
+    def _extract_features(self) -> List[str]:
+        """Extract features as a list from .info-features."""
+        features_element = self.soup.select_one('.info-features')
+        if not features_element:
+            return []
+        
+        # Get all span elements within features
+        feature_spans = features_element.find_all('span')
+        
+        if feature_spans:
+            features = []
+            for span in feature_spans:
+                text = span.get_text(strip=True)
+                if text:
+                    features.append(text)
+            return features
+        
+        # Fallback: return the whole text
+        text = features_element.get_text(strip=True)
+        return [text] if text else []
+    
+    def _extract_description(self) -> Optional[str]:
+        """Extract property description from .comment."""
+        comment_element = self.soup.select_one('.comment')
+        if not comment_element:
+            return None
+        
+        # Get text from all paragraphs within the comment
+        paragraphs = comment_element.find_all('p')
+        if paragraphs:
+            text_parts = [p.get_text(separator=' ', strip=True) for p in paragraphs]
+            return '\n\n'.join(text_parts)
+        
+        # Fallback to entire comment text
+        return comment_element.get_text(separator=' ', strip=True)
+    
+    def _extract_images(self) -> List[str]:
+        """
+        Extract image URLs from the page.
+        
+        Only returns WebP images with the URL pattern:
+        https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/
+        
+        Tries multiple strategies:
+        1. JavaScript data in page (adMultimediasInfo)
+        2. Images within #main-multimedia
+        3. Images within main-image sections
+        4. srcset attributes in source tags
+        """
+        urls = set()  # Use set to avoid duplicates
+        
+        # Strategy 1: Extract from JavaScript data (most reliable for idealista)
+        import re
+        page_content = str(self.soup)
+        
+        # Find all imageDataServiceWebp URLs in the JavaScript
+        webp_pattern = r'imageDataServiceWebp["\s:]+([^"]+\.webp)'
+        matches = re.findall(webp_pattern, page_content)
+        
+        for url in matches:
+            if self._is_valid_image_url(url):
+                urls.add(url)
+        
+        # Strategy 2: Try #main-multimedia img selector
+        multimedia_section = self.soup.select_one('#main-multimedia')
+        if multimedia_section:
+            images = multimedia_section.find_all('img')
+            for img in images:
+                url = self._get_image_url(img)
+                if url and self._is_valid_image_url(url):
+                    urls.add(url)
+        
+        # Strategy 3: Try main-image sections
+        main_images = self.soup.select('.main-image img')
+        for img in main_images:
+            url = self._get_image_url(img)
+            if url and self._is_valid_image_url(url):
+                urls.add(url)
+        
+        # Strategy 4: Try source tags with srcset
+        sources = self.soup.find_all('source')
+        for source in sources:
+            srcset = source.get('srcset')
+            if srcset:
+                url = srcset.split()[0] if ' ' in srcset else srcset
+                if url and self._is_valid_image_url(url):
+                    urls.add(url)
+        
+        return sorted(urls)  # Sort for consistent output
+    
+    @staticmethod
+    def _is_valid_image_url(url: str) -> bool:
+        """
+        Check if image URL matches the required pattern and format.
+        
+        Pattern: https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/
+        Format: .webp only
+        
+        Args:
+            url: Image URL to validate
+            
+        Returns:
+            True if URL matches criteria, False otherwise
+        """
+        if not url or url.startswith('data:'):
+            return False
+        
+        # Check for WebP format
+        if not url.lower().endswith('.webp'):
+            return False
+        
+        # Check for required URL pattern
+        required_pattern = 'https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/'
+        if not url.startswith(required_pattern):
+            return False
+        
+        return True
+    
+    @staticmethod
+    def _get_image_url(img_tag) -> Optional[str]:
+        """Extract URL from an img tag, trying multiple attributes."""
+        return (img_tag.get('src') or 
+                img_tag.get('data-src') or 
+                img_tag.get('data-lazy-src') or
+                img_tag.get('data-original'))
 
-def first_nonempty(*vals) -> Optional[str]:
-    for v in vals:
-        if v and clean_text(v):
-            return clean_text(v)
-    return None
 
-def ordered_dedupe(items: List[str]) -> List[str]:
-    seen = set()
-    out = []
-    for x in items:
-        if x not in seen:
-            seen.add(x)
-            out.append(x)
-    return out
-
-def is_likely_image_url(url: str) -> bool:
-    if not url or not url.lower().startswith(("http://","https://")):
-        return False
-    if not re.search(IMG_EXT_PATTERN, url, flags=re.IGNORECASE):
-        return False
-    return True
-
-def extract_from_srcset(srcset: str) -> List[str]:
-    urls = []
-    if not srcset:
-        return urls
-    for part in SRCSET_SPLIT_RE.split(srcset.strip()):
-        m = SRCSET_URL_RE.match(part)
-        if m:
-            u = m.group(1)
-            if is_likely_image_url(u):
-                urls.append(u)
-    return urls
-
-def prioritize_images(urls: List[str]) -> List[str]:
-    def _priority(u: str) -> Tuple[int, int, int]:
-        host_priority = -1 if any(h in u for h in LIKELY_IMG_HOSTS) else 0
-        size_priority = -3 if "WEB_DETAIL" in u else (-2 if "WEB_DETAIL_TOP" in u else (-1 if "XLARGE" in u else 0))
-        return (host_priority, size_priority, len(u))
-    urls = ordered_dedupe(urls)
-    urls.sort(key=_priority)
-    return urls
-
-# ---------- Extraction helpers ----------
-
-def extract_url(soup: BeautifulSoup) -> Optional[str]:
-    return first_nonempty(
-        *(m.get("content") for m in soup.find_all("meta", attrs={"property": "og:url"})),
-        *(l.get("href") for l in soup.find_all("link", attrs={"rel": ["canonical", "Canonical", "CANONICAL"]})),
-    )
-
-def extract_listing_id(soup: BeautifulSoup, url: Optional[str]) -> Optional[str]:
-    # Try data-adid in DOM
-    adid = None
-    root = soup.find(attrs={"data-adid": True})
-    if root:
-        adid = root.get("data-adid")
-
-    # Fallback: parse from URL (classic: idealista.com/inmueble/12345678/)
-    if not adid and url:
-        m = re.search(r"/inmueble/(\d+)", url)
-        if m:
-            adid = m.group(1)
-    # Another fallback: look for "adId" in inline scripts
-    if not adid:
-        for s in soup.find_all("script"):
-            txt = s.string if s.string else (s.text or "")
-            if not txt:
-                continue
-            m = re.search(r'"adId"\s*:\s*"?(?P<id>\d+)"?', txt)
-            if m:
-                adid = m.group("id")
-                break
-    return adid
-
-def extract_title(soup: BeautifulSoup) -> Optional[str]:
-    h1 = soup.find("h1")
-    title = clean_text(h1.get_text()) if h1 else None
-    if not title:
-        tt = soup.find("title")
-        title = clean_text(tt.get_text()) if tt else None
-    # JSON-LD name as fallback
-    if not title:
-        for sc in soup.find_all("script", attrs={"type": "application/ld+json"}):
-            try:
-                data = json.loads(sc.string)
-            except Exception:
-                continue
-            def _yield(d):
-                if isinstance(d, dict):
-                    yield d
-                elif isinstance(d, list):
-                    for x in d:
-                        if isinstance(x, (dict, list)):
-                            yield from _yield(x)
-            for d in _yield(data):
-                name = d.get("name") if isinstance(d, dict) else None
-                if name:
-                    return clean_text(name)
-    return title
-
-def extract_price(soup: BeautifulSoup) -> Tuple[Optional[int], Optional[str]]:
-    price_text = None
-    price_int = None
-
-    # Common price node classes (Idealista varies by A/B)
-    candidates = []
-    candidates += soup.select(".price, .price-value, .txt-bold, .detail-info .info-data-price, .info-data-price")
-    for c in candidates:
-        maybe = clean_text(c.get_text())
-        if "€" in maybe or re.search(r"\d", maybe):
-            price_text = maybe
-            break
-
-    # Meta/JSON-LD fallbacks
-    if not price_text:
-        for sc in soup.find_all("script", attrs={"type": "application/ld+json"}):
-            try:
-                data = json.loads(sc.string)
-            except Exception:
-                continue
-            if isinstance(data, dict) and "offers" in data:
-                offers = data.get("offers")
-                if isinstance(offers, dict) and "price" in offers:
-                    try:
-                        price_int = int(offers["price"])
-                        price_text = f"{offers['price']} €"
-                        break
-                    except Exception:
-                        pass
-            if isinstance(data, dict) and "price" in data:
-                price_text = str(data["price"])
-
-    if price_int is None and price_text:
-        price_int = to_int_safe(price_text)
-
-    return price_int, price_text
-
-def extract_description(soup: BeautifulSoup) -> Optional[str]:
-    # Typical description block
-    blocks = soup.select(".adCommentsLanguage, .expanded, .comment, #description, .adComments, .adCommentsText")
-    best = None
-    for b in blocks:
-        txt = clean_text(b.get_text(separator=" "))
-        if len(txt) > len(best or ""):
-            best = txt
-    # JSON-LD fallback
-    if not best:
-        for sc in soup.find_all("script", attrs={"type": "application/ld+json"}):
-            try:
-                data = json.loads(sc.string)
-            except Exception:
-                continue
-            if isinstance(data, dict) and "description" in data:
-                cand = clean_text(str(data["description"]))
-                if cand:
-                    best = cand
-    return best
-
-def extract_address_and_geo(soup: BeautifulSoup) -> Tuple[Dict[str, Any], Dict[str, Optional[float]]]:
-    addr = {
-        "full": None,
-        "street": None,
-        "neighborhood": None,
-        "district": None,
-        "municipality": None,
-        "province": None,
-        "postal_code": None,
-    }
-    geo = {"lat": None, "lng": None}
-
-    # JSON-LD is most reliable
-    for sc in soup.find_all("script", attrs={"type": "application/ld+json"}):
+class BatchExtractor:
+    """
+    Batch extractor for processing multiple HTML files.
+    
+    Processes all .html files in a directory (including subdirectories)
+    and outputs results to a JSON file.
+    """
+    
+    def __init__(self, source_dir: str = "source_html", output_file: str = "parsed_properties.json"):
+        """
+        Initialize batch extractor.
+        
+        Args:
+            source_dir: Directory containing HTML files (default: "source_html")
+            output_file: Output JSON file path (default: "parsed_properties.json")
+        """
+        self.source_dir = Path(source_dir)
+        self.output_file = Path(output_file)
+        self.results: List[Dict] = []
+        self.errors: List[Dict] = []
+    
+    def find_html_files(self) -> List[Path]:
+        """
+        Find all .html files in source directory recursively.
+        
+        Returns:
+            List of Path objects for HTML files
+        """
+        if not self.source_dir.exists():
+            raise FileNotFoundError(f"Source directory not found: {self.source_dir}")
+        
+        # Recursively find all .html files
+        html_files = list(self.source_dir.rglob("*.html"))
+        return sorted(html_files)
+    
+    def process_file(self, html_file: Path) -> Optional[Dict]:
+        """
+        Process a single HTML file.
+        
+        Args:
+            html_file: Path to HTML file
+            
+        Returns:
+            Dictionary with extracted data or None if error
+        """
         try:
-            data = json.loads(sc.string)
-        except Exception:
-            continue
-
-        candidates = []
-        if isinstance(data, dict):
-            candidates = [data]
-        elif isinstance(data, list):
-            candidates = [x for x in data if isinstance(x, dict)]
-
-        for d in candidates:
-            # Address
-            address = d.get("address") if isinstance(d, dict) else None
-            if isinstance(address, dict):
-                addr["full"] = first_nonempty(addr["full"], address.get("streetAddress"), address.get("addressLocality"))
-                addr["street"] = first_nonempty(addr["street"], address.get("streetAddress"))
-                addr["municipality"] = first_nonempty(addr["municipality"], address.get("addressLocality"), address.get("addressRegion"))
-                addr["province"] = first_nonempty(addr["province"], address.get("addressRegion"))
-                addr["postal_code"] = first_nonempty(addr["postal_code"], address.get("postalCode"))
-
-            # Geo
-            geo_d = d.get("geo") if isinstance(d, dict) else None
-            if isinstance(geo_d, dict):
-                try:
-                    geo["lat"] = float(geo_d.get("latitude")) if geo_d.get("latitude") is not None else geo["lat"]
-                    geo["lng"] = float(geo_d.get("longitude")) if geo_d.get("longitude") is not None else geo["lng"]
-                except Exception:
-                    pass
-
-            # Full composite address sometimes lives in "name" or breadcrumbs
-            nm = d.get("name") if isinstance(d, dict) else None
-            if nm and not addr["full"]:
-                addr["full"] = clean_text(nm)
-
-    # DOM fallbacks (crumbs)
-    if not addr["full"]:
-        crumbs = soup.select(".breadcrumb, .breadcrumb-container, nav[aria-label='breadcrumb']")
-        for bc in crumbs:
-            txt = clean_text(bc.get_text(" / "))
-            if len(txt) > len(addr["full"] or ""):
-                addr["full"] = txt
-
-    # Another DOM full address spot
-    if not addr["full"]:
-        loc = soup.select_one(".main-info__title-minor, .main-info__title-minor span, .info-property .txt-lighter")
-        if loc:
-            addr["full"] = clean_text(loc.get_text())
-
-    return addr, geo
-
-def extract_features(soup: BeautifulSoup) -> Dict[str, Any]:
-    feats: Dict[str, Any] = {
-        "bedrooms": None,
-        "bathrooms": None,
-        "size_m2": None,
-        "floor": None,
-        "has_elevator": None,
-        "has_terrace": None,
-        "energy_cert": None,
-        "year_built": None,
-        "housing_type": None,
-        "parking": None,
-        "other": [],
-    }
-
-    # Common “features” lists (labels)
-    candidates = []
-    candidates += soup.select(".details-property, .info-data, .info-features, ul.feature-list, .charblock, .extended-info")
-    text_blobs = []
-
-    for c in candidates:
-        for li in c.find_all(["li","span","div"]):
-            t = clean_text(li.get_text(" "))
-            if t and len(t) >= 2:
-                text_blobs.append(t)
-
-    # Quick parsers
-    for t in text_blobs:
-        # bedrooms
-        m = re.search(r"(\d+)\s*(?:hab|hab\.)|(\d+)\s*habitaciones|(\d+)\s*rooms?", t, flags=re.IGNORECASE)
-        if m and feats["bedrooms"] is None:
-            feats["bedrooms"] = to_int_safe("".join(x for x in m.groups() if x))
-
-        # bathrooms
-        m = re.search(r"(\d+)\s*bañ|(\d+)\s*wc|(\d+)\s*ba?th", t, flags=re.IGNORECASE)
-        if m and feats["bathrooms"] is None:
-            feats["bathrooms"] = to_int_safe("".join(x for x in m.groups() if x))
-
-        # size
-        m = re.search(r"(\d+)\s*(?:m2|m²|metros)", t, flags=re.IGNORECASE)
-        if m and feats["size_m2"] is None:
-            feats["size_m2"] = to_int_safe(m.group(1))
-
-        # floor
-        if any(k in t.lower() for k in ["planta", "ground floor", "bajo", "ático", "sótano", "entresuelo", "3ª", "4ª", "5ª"]):
-            if feats["floor"] is None:
-                feats["floor"] = t
-
-        # elevator
-        if "ascensor" in t.lower():
-            feats["has_elevator"] = True if "sin" not in t.lower() else False
-
-        # terrace
-        if "terraza" in t.lower():
-            feats["has_terrace"] = True
-
-        # energy cert
-        m = re.search(r"certificado.*?([A-G])\b", t, flags=re.IGNORECASE)
-        if m and feats["energy_cert"] is None:
-            feats["energy_cert"] = m.group(1).upper()
-
-        # year built
-        m = re.search(r"(?:año|año de construcción|construido en)\s*(\d{4})", t, flags=re.IGNORECASE)
-        if m and feats["year_built"] is None:
-            feats["year_built"] = to_int_safe(m.group(1))
-
-        # housing type
-        if feats["housing_type"] is None:
-            for kw in ["piso","apartamento","ático","duplex","dúplex","chalet","adosado","estudio","loft","planta baja","bungalow"]:
-                if re.search(rf"\b{kw}\b", t, flags=re.IGNORECASE):
-                    feats["housing_type"] = kw
-                    break
-
-        # parking
-        if "garaje" in t.lower() or "plaza de garaje" in t.lower() or "aparcamiento" in t.lower():
-            if feats["parking"] is None:
-                feats["parking"] = "yes"
-
-    # Collect any unusual labels as "other"
-    for t in text_blobs:
-        if not any(x and x in t for x in [
-            str(feats.get("floor") or ""),
-        ]):
-            if t and t not in feats["other"]:
-                feats["other"].append(t)
-
-    # JSON-LD enrich (rooms/size)
-    for sc in soup.find_all("script", attrs={"type": "application/ld+json"}):
+            extractor = PropertyExtractor(str(html_file))
+            data = extractor.extract()
+            
+            # Add metadata
+            result = data.to_dict()
+            result['source_file'] = str(html_file.relative_to(self.source_dir))
+            
+            return result
+        
+        except Exception as e:
+            error_info = {
+                'file': str(html_file.relative_to(self.source_dir)),
+                'error': str(e),
+                'error_type': type(e).__name__
+            }
+            self.errors.append(error_info)
+            return None
+    
+    def process_all(self, verbose: bool = True) -> Dict:
+        """
+        Process all HTML files in source directory.
+        
+        Args:
+            verbose: Print progress messages
+            
+        Returns:
+            Dictionary with results and statistics
+        """
+        html_files = self.find_html_files()
+        
+        if verbose:
+            print(f"Found {len(html_files)} HTML files in {self.source_dir}")
+            print("=" * 60)
+        
+        self.results = []
+        self.errors = []
+        
+        for i, html_file in enumerate(html_files, 1):
+            if verbose:
+                print(f"[{i}/{len(html_files)}] Processing: {html_file.name}...", end=" ")
+            
+            result = self.process_file(html_file)
+            
+            if result:
+                self.results.append(result)
+                if verbose:
+                    print("✓")
+            else:
+                if verbose:
+                    print("✗")
+        
+        if verbose:
+            print("=" * 60)
+            print(f"Completed: {len(self.results)} successful, {len(self.errors)} errors")
+        
+        return {
+            'total_files': len(html_files),
+            'successful': len(self.results),
+            'errors': len(self.errors)
+        }
+    
+    def save_results(self, verbose: bool = True) -> None:
+        """
+        Save results to JSON file.
+        
+        Args:
+            verbose: Print status message
+        """
+        output_data = {
+            'properties': self.results,
+            'metadata': {
+                'total_properties': len(self.results),
+                'extraction_errors': len(self.errors),
+                'errors': self.errors
+            }
+        }
+        
+        with open(self.output_file, 'w', encoding='utf-8') as f:
+            json.dump(output_data, f, indent=2, ensure_ascii=False)
+        
+        if verbose:
+            print(f"\n✓ Results saved to: {self.output_file}")
+            print(f"  - {len(self.results)} properties extracted")
+            if self.errors:
+                print(f"  - {len(self.errors)} errors (see metadata.errors in JSON)")
+    
+    def run(self, verbose: bool = True) -> None:
+        """
+        Run the complete batch extraction process.
+        
+        Args:
+            verbose: Print progress messages
+        """
         try:
-            data = json.loads(sc.string)
-        except Exception:
-            continue
-        ds = []
-        if isinstance(data, dict):
-            ds = [data]
-        elif isinstance(data, list):
-            ds = [x for x in data if isinstance(x, dict)]
-        for d in ds:
-            if feats["bedrooms"] is None:
-                br = d.get("numberOfRooms") or d.get("numberOfBedrooms")
-                if isinstance(br, (int, float, str)):
-                    feats["bedrooms"] = to_int_safe(str(br))
-            if feats["size_m2"] is None:
-                fs = d.get("floorSize")
-                if isinstance(fs, dict) and "value" in fs:
-                    feats["size_m2"] = to_int_safe(str(fs.get("value")))
+            stats = self.process_all(verbose=verbose)
+            self.save_results(verbose=verbose)
+        except Exception as e:
+            print(f"Fatal error: {e}")
+            raise
 
-    return feats
 
-def extract_agency(soup: BeautifulSoup) -> Dict[str, Any]:
-    agency = {"name": None, "phone": None, "is_professional": None}
+class PropertyFormatter:
+    """Formats property data for output."""
+    
+    @staticmethod
+    def pretty_print(data: PropertyData) -> str:
+        """
+        Format property data for pretty printing.
+        
+        Args:
+            data: PropertyData object
+            
+        Returns:
+            Formatted string
+        """
+        lines = []
+        lines.append("=" * 60)
+        lines.append("PROPERTY DATA EXTRACTION")
+        lines.append("=" * 60)
+        
+        lines.append(f"\nTitle: {data.title}")
+        lines.append(f"Operation: {data.operation_type or 'Unknown'}")
+        lines.append(f"Property Type: {data.property_type or 'Unknown'}")
+        lines.append(f"Price: {data.price}")
+        
+        if data.location:
+            lines.append(f"\nLocation:")
+            for key, value in data.location.items():
+                lines.append(f"  {key.capitalize()}: {value}")
+        
+        lines.append(f"\nFeatures ({len(data.features)}):")
+        for i, feature in enumerate(data.features, 1):
+            lines.append(f"  {i}. {feature}")
+        
+        lines.append(f"\nDescription:")
+        lines.append(f"  {data.description}")
+        
+        lines.append(f"\nImages ({len(data.images)}):")
+        for i, url in enumerate(data.images, 1):
+            lines.append(f"  {i}. {url}")
+        
+        lines.append("=" * 60)
+        
+        return '\n'.join(lines)
 
-    # Common selectors
-    name = None
-    node = soup.select_one(".about-advertiser-name, .professional-name, .ad-footer .name, .advertiser__name")
-    if node:
-        name = clean_text(node.get_text())
-
-    phone = None
-    pnode = soup.select_one(".phone, .advertiser-phone, a[href^='tel:']")
-    if pnode:
-        if pnode.has_attr("href") and pnode["href"].startswith("tel:"):
-            phone = pnode["href"].split(":",1)[1]
-        else:
-            phone = clean_text(pnode.get_text())
-
-    is_prof = None
-    badge = soup.select_one(".is-professional, .professional-badge, .about-advertiser")
-    if badge:
-        txt = clean_text(badge.get_text()).lower()
-        if any(k in txt for k in ["profesional","agency","inmobiliaria","real estate"]):
-            is_prof = True
-
-    # JSON-LD fallback (seller)
-    for sc in soup.find_all("script", attrs={"type":"application/ld+json"}):
-        try:
-            data = json.loads(sc.string)
-        except Exception:
-            continue
-        seller = data.get("seller") if isinstance(data, dict) else None
-        if isinstance(seller, dict):
-            name = first_nonempty(name, seller.get("name"))
-            tel = seller.get("telephone")
-            if tel and not phone:
-                phone = clean_text(tel)
-            stype = seller.get("@type")
-            if is_prof is None and isinstance(stype, str):
-                is_prof = stype.lower() in ("realestageagent","organization","localbusiness","realestateagent","realestatelisting")
-
-    agency["name"] = name
-    agency["phone"] = phone
-    agency["is_professional"] = is_prof
-    return agency
-
-def extract_images(soup: BeautifulSoup) -> List[str]:
-    urls: List[str] = []
-
-    # 1) <img> direct / lazy
-    for img in soup.find_all("img"):
-        for attr in ("src", "data-src", "data-original", "data-ondemand-img"):
-            u = img.get(attr)
-            if u and is_likely_image_url(u):
-                urls.append(u)
-        if img.has_attr("srcset"):
-            urls.extend(extract_from_srcset(img["srcset"]))
-
-    # 2) <source> tags
-    for source in soup.find_all("source"):
-        for attr in ("srcset", "src"):
-            v = source.get(attr)
-            if v:
-                if attr == "srcset":
-                    urls.extend(extract_from_srcset(v))
-                elif is_likely_image_url(v):
-                    urls.append(v)
-
-    # 3) OG / link icons
-    for meta_prop in soup.find_all("meta", attrs={"property": "og:image"}):
-        v = meta_prop.get("content")
-        if v and is_likely_image_url(v):
-            urls.append(v)
-    for link in soup.find_all("link"):
-        v = link.get("href")
-        if v and is_likely_image_url(v):
-            urls.append(v)
-
-    # 4) Inline JS blobs where Idealista hides gallery arrays
-    for script in soup.find_all("script"):
-        content = script.string if script.string else (script.text or "")
-        if not content:
-            continue
-        if ("adMultimediasInfo" in content or
-            "multimediaCarrousel" in content or
-            "imageDataService" in content or
-            "imageUrl" in content or
-            "WEB_DETAIL" in content or
-            len(content) > 500):
-            for u in URL_RE.findall(content):
-                if is_likely_image_url(u):
-                    urls.append(u)
-
-    return prioritize_images(urls)
-
-# ---------- Main walk ----------
-
-def parse_file(path: Path, rel: str) -> Dict[str, Any]:
-    try:
-        html = path.read_text(encoding="utf-8", errors="ignore")
-    except Exception as e:
-        return {"file": rel, "error": f"read_error: {e}"}
-
-    soup = BeautifulSoup(html, "html.parser")
-
-    url = extract_url(soup)
-    listing_id = extract_listing_id(soup, url)
-    title = extract_title(soup)
-    price_int, price_text = extract_price(soup)
-    address, geo = extract_address_and_geo(soup)
-    features = extract_features(soup)
-    description = extract_description(soup)
-    agency = extract_agency(soup)
-    images = extract_images(soup)
-
-    return {
-        "file": rel,
-        "url": url,
-        "listing_id": listing_id,
-        "title": title,
-        "price": price_int,
-        "price_text": price_text,
-        "address": address,
-        "geo": geo,
-        "features": features,
-        "description": description,
-        "agency": agency,
-        "images": images,
-    }
 
 def main():
-    if not SRC_ROOT.exists() or not SRC_ROOT.is_dir():
-        sys.stderr.write(f"Source folder not found: {SRC_ROOT.resolve()}\n")
-        sys.exit(2)
-
-    files = sorted(SRC_ROOT.glob(HTML_GLOB))
-    if not files:
-        sys.stderr.write(f"No HTML files matched under {SRC_ROOT.resolve()} with pattern {HTML_GLOB}\n")
-        sys.exit(3)
-
-    results: List[Dict[str, Any]] = []
-    for f in files:
+    """Main function to run the extractor from command line."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Extract property data from Idealista HTML files')
+    parser.add_argument('path', nargs='?', help='Path to HTML file or directory (for batch mode)')
+    parser.add_argument('--json', action='store_true', help='Output as JSON')
+    parser.add_argument('--batch', action='store_true', help='Batch process all HTML files in directory')
+    parser.add_argument('--source-dir', default='source_html', help='Source directory for batch mode (default: source_html)')
+    parser.add_argument('--output', default='parsed_properties.json', help='Output file for batch mode (default: parsed_properties.json)')
+    parser.add_argument('--quiet', action='store_true', help='Suppress progress messages in batch mode')
+    
+    args = parser.parse_args()
+    
+    # Batch mode
+    if args.batch:
         try:
-            rel = str(f.relative_to(SRC_ROOT)).replace("\\", "/")
-        except Exception:
-            rel = f.name
-        results.append(parse_file(f, rel))
+            batch = BatchExtractor(
+                source_dir=args.source_dir,
+                output_file=args.output
+            )
+            batch.run(verbose=not args.quiet)
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error during batch processing: {e}")
+            sys.exit(1)
+        return
+    
+    # Single file mode
+    if not args.path:
+        parser.print_help()
+        sys.exit(1)
+    
+    html_path = args.path
+    output_json = args.json
+    
+    try:
+        # Create extractor and extract data
+        extractor = PropertyExtractor(html_path)
+        data = extractor.extract()
+        
+        if output_json:
+            # Output as JSON
+            print(data.to_json())
+        else:
+            # Pretty print
+            formatter = PropertyFormatter()
+            print(formatter.pretty_print(data))
+    
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error extracting data: {e}")
+        sys.exit(1)
 
-    # Print ONE JSON to stdout
-    sys.stdout.write(json.dumps(results, ensure_ascii=False, indent=2))
-    sys.stdout.flush()
 
 if __name__ == "__main__":
     main()
