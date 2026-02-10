@@ -1,7 +1,8 @@
 from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, Query, status
 
-from src.dependencies import get_property_service
+from src.models import User
+from src.dependencies import get_property_service, get_current_user
 from src.services import PropertyService
 from src.schemas.property import (
     PropertyCreate,
@@ -26,7 +27,8 @@ router = APIRouter(
 )
 async def create_property(
         property_data: PropertyCreate,
-        service: PropertyService = Depends(get_property_service)
+        service: PropertyService = Depends(get_property_service),
+        current_user: User = Depends(get_current_user)
 ):
     """
     Create a new property.
@@ -50,7 +52,8 @@ async def create_property(
 async def get_properties(
         skip: int = Query(0, ge=0, description="Number of records to skip"),
         limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-        service: PropertyService = Depends(get_property_service)
+        service: PropertyService = Depends(get_property_service),
+        current_user: User = Depends(get_current_user)
 ):
     """Get all properties with pagination"""
     return await service.get_all_properties(skip=skip, limit=limit)
@@ -184,7 +187,6 @@ async def soft_delete_property(
     Soft delete by marking as unavailable.
     """
     return await service.soft_delete_property(property_id)
-
 
 
 @router.post(

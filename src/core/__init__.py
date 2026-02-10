@@ -21,6 +21,9 @@ from .logger import (
     log_debug
 )
 
+from .security import (
+    verify_token
+)
 # Full module
 __all__ = [
     "Base",
@@ -33,5 +36,6 @@ __all__ = [
     "get_debug_logger", 
     "get_error_logger",
     "log_error",
-    "log_debug"
+    "log_debug",
+    "verify_token"
 ]
