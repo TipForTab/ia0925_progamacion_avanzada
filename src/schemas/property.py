@@ -1,7 +1,7 @@
 import re
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Literal
 from datetime import datetime
 from src.schemas.property_image import ImageResponse
 
@@ -10,6 +10,7 @@ class PropertyBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255, description="Property title")
     address: str = Field(..., min_length=1, max_length=500, description="Property address")
     price: float = Field(..., ge=100, description="Property price (minimum $100)")
+    operation_type: Optional[Literal['rent', 'sale']] = Field(None, description="Operation type: rent or sale")
     bathrooms: int = Field(..., ge=0, description="Number of bathrooms")
     rooms: int = Field(..., ge=0, description="Number of rooms")
     square_meters: float = Field(..., gt=0, le=10000, description="Property size in square meters (max 10,000)")
@@ -67,6 +68,7 @@ class PropertyUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     address: Optional[str] = Field(None, min_length=1, max_length=500)
     price: Optional[float] = Field(None, ge=100)
+    operation_type: Optional[Literal['rent', 'sale']] = Field(None, description="Operation type: rent or sale")
     bathrooms: Optional[int] = Field(None, ge=0)
     rooms: Optional[int] = Field(None, ge=0)
     square_meters: Optional[float] = Field(None, gt=0, le=10000)
@@ -141,6 +143,9 @@ class PropertySearchFilters(BaseModel):
     # Property type filters
     is_apartment: Optional[bool] = None
     is_house: Optional[bool] = None
+    
+    # Operation type filter
+    operation_type: Optional[Literal['rent', 'sale']] = Field(None, description="Filter by operation type")
 
     # Price filters
     min_price: Optional[float] = Field(None, ge=0)
@@ -231,6 +236,21 @@ class BulkUpdateAvailability(BaseModel):
 
     property_ids: List[int] = Field(..., min_length=1, max_length=1000)
     is_available: bool
+
+    @field_validator('property_ids')
+    @classmethod
+    def validate_unique_ids(cls, v):
+        """Ensure property IDs are unique"""
+        if len(v) != len(set(v)):
+            raise ValueError("Property IDs must be unique")
+        return v
+
+
+class BulkUpdateOperationType(BaseModel):
+    """Schema for bulk operation type updates"""
+
+    property_ids: List[int] = Field(..., min_length=1, max_length=1000)
+    operation_type: Literal['rent', 'sale']
 
     @field_validator('property_ids')
     @classmethod

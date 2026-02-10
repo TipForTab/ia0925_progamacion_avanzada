@@ -81,15 +81,56 @@ class PropertyParser:
     
     @staticmethod
     def parse_price(price_str: str) -> float:
-        """Parse price string like '1.800€/mes' or '600 €/mes' to float."""
+        """
+        Parse price string with Spanish/European number format.
+        
+        Spanish format:
+        - "1.800€/mes" → 1800.0 (dot as thousand separator)
+        - "1.800,50€/mes" → 1800.50 (comma as decimal separator)
+        - "350.000€" → 350000.0
+        
+        Args:
+            price_str: Price string in Spanish format
+            
+        Returns:
+            Price as float
+        """
         if not price_str:
             return 0.0
 
+        # Remove currency symbols, /mes, /año, whitespace, etc.
         cleaned = re.sub(r'[^\d.,]', '', price_str)
-        cleaned = cleaned.replace(',', '')
-        parts = cleaned.split('.')
-        if len(parts) > 2:
-            cleaned = ''.join(parts[:-1]) + '.' + parts[-1]
+        
+        if not cleaned:
+            return 0.0
+        
+        # Handle Spanish/European number format
+        # If both comma and dot present: dot=thousand, comma=decimal
+        # If only dot present: check if it's thousand separator or decimal
+        # If only comma present: it's decimal separator
+        
+        if ',' in cleaned and '.' in cleaned:
+            # Both present: "1.800,50" → remove dots, replace comma with dot
+            cleaned = cleaned.replace('.', '').replace(',', '.')
+        elif ',' in cleaned:
+            # Only comma: "1800,50" → replace comma with dot
+            cleaned = cleaned.replace(',', '.')
+        elif '.' in cleaned:
+            # Only dot: check position
+            parts = cleaned.split('.')
+            if len(parts) == 2:
+                # Two parts: could be "1.800" (thousand) or "18.50" (decimal)
+                # If last part has 3 digits, it's likely a thousand separator
+                if len(parts[1]) == 3:
+                    # "1.800" → "1800"
+                    cleaned = ''.join(parts)
+                # If last part has 1-2 digits, treat as decimal
+                else:
+                    # "18.50" → keep as is
+                    pass
+            elif len(parts) > 2:
+                # Multiple dots: "1.234.567" → "1234567"
+                cleaned = ''.join(parts)
         
         try:
             return float(cleaned)
