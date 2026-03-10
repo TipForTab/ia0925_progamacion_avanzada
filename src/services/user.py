@@ -32,22 +32,24 @@ class UserService:
         - Email format
         - Username/password length constraints
         """
-        log_debug("Creating new user", {"username": user_data.username, "email": user_data.email})
+        log_debug(
+            "Creating new user",
+            {"username": user_data.username, "email": user_data.email},
+        )
 
         # Business rule: Check if username already exists
         existing_username = await self.repository.get_by_username(user_data.username)
         if existing_username:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Username already registered"
+                detail="Username already registered",
             )
 
         # Business rule: Check if email already exists
         existing_email = await self.repository.get_by_email(user_data.email)
         if existing_email:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered"
+                status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
             )
 
         # Hash password before storing
@@ -68,7 +70,7 @@ class UserService:
         if not db_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {user_id} not found"
+                detail=f"User with ID {user_id} not found",
             )
 
         return UserResponse.model_validate(db_user)
@@ -82,7 +84,7 @@ class UserService:
         if not db_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with username '{username}' not found"
+                detail=f"User with username '{username}' not found",
             )
 
         return UserResponse.model_validate(db_user)
@@ -96,16 +98,14 @@ class UserService:
         if not db_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with email '{email}' not found"
+                detail=f"User with email '{email}' not found",
             )
 
         return UserResponse.model_validate(db_user)
 
     @handle_service_errors("get all users")
     async def get_all_users(
-            self,
-            skip: int = 0,
-            limit: int = 100
+        self, skip: int = 0, limit: int = 100
     ) -> List[UserResponse]:
         """Get all users with pagination"""
         log_debug("Fetching all users", {"skip": skip, "limit": limit})
@@ -114,11 +114,7 @@ class UserService:
         return [UserResponse.model_validate(user) for user in users]
 
     @handle_service_errors("update user")
-    async def update_user(
-            self,
-            user_id: int,
-            update_data: UserUpdate
-    ) -> UserResponse:
+    async def update_user(self, user_id: int, update_data: UserUpdate) -> UserResponse:
         """
         Update user.
 
@@ -131,7 +127,7 @@ class UserService:
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {user_id} not found"
+                detail=f"User with ID {user_id} not found",
             )
 
         # Get update data
@@ -139,16 +135,18 @@ class UserService:
         if not update_dict:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No valid fields provided for update"
+                detail="No valid fields provided for update",
             )
 
         # Business rule: If username is being updated, check for duplicates
         if update_data.username is not None:
-            existing_username = await self.repository.get_by_username(update_data.username)
+            existing_username = await self.repository.get_by_username(
+                update_data.username
+            )
             if existing_username and existing_username.id != user_id:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Username already taken"
+                    detail="Username already taken",
                 )
 
         # Business rule: If email is being updated, check for duplicates
@@ -156,8 +154,7 @@ class UserService:
             existing_email = await self.repository.get_by_email(update_data.email)
             if existing_email and existing_email.id != user_id:
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Email already taken"
+                    status_code=status.HTTP_409_CONFLICT, detail="Email already taken"
                 )
 
         # Hash password if being updated
@@ -178,7 +175,7 @@ class UserService:
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {user_id} not found"
+                detail=f"User with ID {user_id} not found",
             )
 
         success = await self.repository.delete(user_id)
@@ -198,14 +195,12 @@ class UserService:
         db_user = await self.repository.get_by_username(username)
         if not db_user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
             )
 
         if not verify_password(password, db_user.hashed_password):
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
             )
 
         log_debug(f"User authenticated successfully: {username}")

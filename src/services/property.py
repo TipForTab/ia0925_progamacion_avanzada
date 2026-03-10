@@ -9,7 +9,7 @@ from src.schemas.property import (
     PropertyUpdate,
     PropertyResponse,
     PropertySearchFilters,
-    BulkUpdateAvailability
+    BulkUpdateAvailability,
 )
 from src.core import log_error, log_debug
 
@@ -28,7 +28,7 @@ def handle_service_errors(operation_name: str):
                 log_error(e, f"Failed to {operation_name}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Failed to {operation_name}"
+                    detail=f"Failed to {operation_name}",
                 )
 
         return wrapper
@@ -64,7 +64,7 @@ class PropertyService:
             if existing:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Property with source URL already exists: {property_data.source_url}"
+                    detail=f"Property with source URL already exists: {property_data.source_url}",
                 )
 
         # Create property
@@ -83,16 +83,14 @@ class PropertyService:
         if not db_property:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Property with ID {property_id} not found"
+                detail=f"Property with ID {property_id} not found",
             )
 
         return PropertyResponse.model_validate(db_property)
 
     @handle_service_errors("get all properties")
     async def get_all_properties(
-            self,
-            skip: int = 0,
-            limit: int = 100
+        self, skip: int = 0, limit: int = 100
     ) -> List[PropertyResponse]:
         """Get all properties with pagination"""
         log_debug("Fetching all properties", {"skip": skip, "limit": limit})
@@ -102,9 +100,7 @@ class PropertyService:
 
     @handle_service_errors("get available properties")
     async def get_available_properties(
-            self,
-            skip: int = 0,
-            limit: int = 100
+        self, skip: int = 0, limit: int = 100
     ) -> List[PropertyResponse]:
         """Get only available properties"""
         log_debug("Fetching available properties", {"skip": skip, "limit": limit})
@@ -114,9 +110,7 @@ class PropertyService:
 
     @handle_service_errors("update property")
     async def update_property(
-            self,
-            property_id: int,
-            property_data: PropertyUpdate
+        self, property_id: int, property_data: PropertyUpdate
     ) -> PropertyResponse:
         """
         Create a new property.
@@ -135,7 +129,7 @@ class PropertyService:
             if existing:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Property with source URL already exists: {property_data.source_url}"
+                    detail=f"Property with source URL already exists: {property_data.source_url}",
                 )
 
         # Create property
@@ -154,16 +148,14 @@ class PropertyService:
         if not db_property:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Property with ID {property_id} not found"
+                detail=f"Property with ID {property_id} not found",
             )
 
         return PropertyResponse.model_validate(db_property)
 
     @handle_service_errors("get all properties")
     async def get_all_properties(
-            self,
-            skip: int = 0,
-            limit: int = 100
+        self, skip: int = 0, limit: int = 100
     ) -> List[PropertyResponse]:
         """Get all properties with pagination"""
         log_debug("Fetching all properties", {"skip": skip, "limit": limit})
@@ -173,9 +165,7 @@ class PropertyService:
 
     @handle_service_errors("get available properties")
     async def get_available_properties(
-            self,
-            skip: int = 0,
-            limit: int = 100
+        self, skip: int = 0, limit: int = 100
     ) -> List[PropertyResponse]:
         """Get only available properties"""
         log_debug("Fetching available properties", {"skip": skip, "limit": limit})
@@ -185,9 +175,7 @@ class PropertyService:
 
     @handle_service_errors("update property")
     async def update_property(
-            self,
-            property_id: int,
-            update_data: PropertyUpdate
+        self, property_id: int, update_data: PropertyUpdate
     ) -> PropertyResponse:
         """
         Update property.
@@ -201,7 +189,7 @@ class PropertyService:
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Property with ID {property_id} not found"
+                detail=f"Property with ID {property_id} not found",
             )
 
         # Get update data
@@ -209,16 +197,18 @@ class PropertyService:
         if not update_dict:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No valid fields provided for update"
+                detail="No valid fields provided for update",
             )
 
         # Business rule: Check for duplicate source_url if being updated
         if update_data.source_url:
-            existing_url = await self.repository.get_by_source_url(update_data.source_url)
+            existing_url = await self.repository.get_by_source_url(
+                update_data.source_url
+            )
             if existing_url and existing_url.id != property_id:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Another property with this source URL already exists"
+                    detail="Another property with this source URL already exists",
                 )
 
         # Update property
@@ -241,14 +231,14 @@ class PropertyService:
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Property with ID {property_id} not found"
+                detail=f"Property with ID {property_id} not found",
             )
 
         # Business rule: Prevent deletion if property has images
         if existing.images:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Cannot delete property with associated images. Delete images first or use soft delete."
+                detail="Cannot delete property with associated images. Delete images first or use soft delete.",
             )
 
         success = await self.repository.delete(property_id)
@@ -266,14 +256,16 @@ class PropertyService:
         if not updated_property:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Property with ID {property_id} not found"
+                detail=f"Property with ID {property_id} not found",
             )
 
         log_debug(f"Property soft deleted successfully: {property_id}")
         return PropertyResponse.model_validate(updated_property)
 
     @handle_service_errors("search properties")
-    async def search_properties(self, filters: PropertySearchFilters) -> List[PropertyResponse]:
+    async def search_properties(
+        self, filters: PropertySearchFilters
+    ) -> List[PropertyResponse]:
         """
         Advanced property search.
 
@@ -287,7 +279,7 @@ class PropertyService:
         # Apply business default: show available properties only if not specified
         filters_dict = filters.model_dump()
         if filters.is_available is None:
-            filters_dict['is_available'] = True
+            filters_dict["is_available"] = True
 
         properties = await self.repository.advanced_search(filters_dict)
         return [PropertyResponse.model_validate(prop) for prop in properties]
@@ -310,8 +302,7 @@ class PropertyService:
 
         # Get square meters statistics
         sqm_stats = await self.repository.get_field_statistics(
-            'square_meters',
-            filters={'is_available': True}
+            "square_meters", filters={"is_available": True}
         )
 
         stats = {
@@ -321,20 +312,19 @@ class PropertyService:
             "apartments": type_counts.get("apartments", 0),
             "houses": type_counts.get("houses", 0),
             "price_statistics": {
-                "min_price": price_stats['min_price'],
-                "max_price": price_stats['max_price'],
-                "avg_price": round(price_stats['avg_price'], 2),
-                "total_properties": price_stats['count']
+                "min_price": price_stats["min_price"],
+                "max_price": price_stats["max_price"],
+                "avg_price": round(price_stats["avg_price"], 2),
+                "total_properties": price_stats["count"],
             },
             "size_statistics": {
-                "min_square_meters": sqm_stats.get('min_square_meters', 0),
-                "max_square_meters": sqm_stats.get('max_square_meters', 0),
-                "avg_square_meters": round(sqm_stats.get('avg_square_meters', 0), 2)
+                "min_square_meters": sqm_stats.get("min_square_meters", 0),
+                "max_square_meters": sqm_stats.get("max_square_meters", 0),
+                "avg_square_meters": round(sqm_stats.get("avg_square_meters", 0), 2),
             },
             "availability_percentage": round(
-                (available_count / total_count * 100) if total_count > 0 else 0,
-                2
-            )
+                (available_count / total_count * 100) if total_count > 0 else 0, 2
+            ),
         }
 
         log_debug("Property statistics calculated", stats)
@@ -342,8 +332,7 @@ class PropertyService:
 
     @handle_service_errors("bulk update availability")
     async def bulk_update_availability(
-            self,
-            bulk_data: BulkUpdateAvailability
+        self, bulk_data: BulkUpdateAvailability
     ) -> Dict[str, Any]:
         """
         Bulk update availability status for multiple properties.
@@ -353,18 +342,20 @@ class PropertyService:
         - Property IDs are unique
         - List size constraints
         """
-        log_debug("Bulk updating availability", {
-            "property_ids_count": len(bulk_data.property_ids),
-            "is_available": bulk_data.is_available
-        })
+        log_debug(
+            "Bulk updating availability",
+            {
+                "property_ids_count": len(bulk_data.property_ids),
+                "is_available": bulk_data.is_available,
+            },
+        )
 
         updated_count = await self.repository.bulk_update_availability(
-            bulk_data.property_ids,
-            bulk_data.is_available
+            bulk_data.property_ids, bulk_data.is_available
         )
 
         return {
             "updated_count": updated_count,
             "requested_count": len(bulk_data.property_ids),
-            "is_available": bulk_data.is_available
+            "is_available": bulk_data.is_available,
         }

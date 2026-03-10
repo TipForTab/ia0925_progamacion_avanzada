@@ -23,7 +23,9 @@ class Property(Base):
     amenities = Column(JSON, nullable=True)
     created_at = Column(String, nullable=True, default=func.now())
     updated_at = Column(String, nullable=True, default=func.now(), onupdate=func.now())
-    images = relationship("Image", back_populates="property", cascade="all, delete-orphan")
+    images = relationship(
+        "Image", back_populates="property", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Property(id={self.id}, title='{self.title}', price={self.price}, operation='{self.operation_type}')>"

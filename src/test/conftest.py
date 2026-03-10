@@ -13,8 +13,7 @@ from src.core.security import create_access_token, hash_password
 from src.models.user import User
 from src.repositories import PropertyRepository
 
-
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 
 
 @pytest.fixture(scope="session")
@@ -34,9 +33,7 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
 
     # Create async engine
     engine = create_async_engine(
-        f"sqlite+aiosqlite:///{temp_db.name}",
-        echo=False,
-        future=True
+        f"sqlite+aiosqlite:///{temp_db.name}", echo=False, future=True
     )
 
     # Create session factory

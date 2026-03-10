@@ -13,7 +13,11 @@ from src.routers import property_router, property_image_router, auth_router
 load_dotenv()
 
 # External service URLs
-DATA_EXTRACTION_URL = settings.data_extraction_url if hasattr(settings, 'data_extraction_url') else "http://data-extraction:8000"
+DATA_EXTRACTION_URL = (
+    settings.data_extraction_url
+    if hasattr(settings, "data_extraction_url")
+    else "http://data-extraction:8000"
+)
 
 
 class ExtractionRequest(BaseModel):
@@ -36,7 +40,7 @@ app = FastAPI(
     title="Property Management API",
     description="API for managing properties and their images",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add CORS middleware with settings from .env
@@ -61,7 +65,7 @@ async def root():
         "message": "Property Management API",
         "version": "1.0.0",
         "environment": settings.environment,
-        "docs": "/docs"
+        "docs": "/docs",
     }
 
 
@@ -79,7 +83,7 @@ async def health():
             "status": "healthy",
             "environment": settings.environment,
             "database": "connected",
-            "version": "1.0.0"
+            "version": "1.0.0",
         }
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Health check failed: {str(e)}")
@@ -94,17 +98,21 @@ async def extract_data(request: ExtractionRequest):
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
-                f"{DATA_EXTRACTION_URL}/extract",
-                json={"text": request.text}
+                f"{DATA_EXTRACTION_URL}/extract", json={"text": request.text}
             )
             response.raise_for_status()
             return response.json()
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Data extraction service timed out")
     except httpx.ConnectError:
-        raise HTTPException(status_code=503, detail="Data extraction service unavailable")
+        raise HTTPException(
+            status_code=503, detail="Data extraction service unavailable"
+        )
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=f"Extraction failed: {e.response.text}")
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"Extraction failed: {e.response.text}",
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Extraction error: {str(e)}")
 
@@ -117,5 +125,5 @@ if __name__ == "__main__":
         host=settings.api_host,
         port=settings.api_port,
         log_level=settings.log_level.lower(),
-        reload=settings.is_development
+        reload=settings.is_development,
     )

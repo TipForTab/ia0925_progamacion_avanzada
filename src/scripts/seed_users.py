@@ -11,7 +11,6 @@ from src.core.database import async_session_maker
 from src.services.user import UserService
 from src.schemas.user import UserCreate
 
-
 SEED_USERS = [
     {"username": "antonio", "email": "antonio@example.com", "password": "admin1234"},
     {"username": "daniel_l", "email": "daniel_l@example.com", "password": "admin1234"},
@@ -23,7 +22,7 @@ async def seed_users():
     """Create seed users in the database."""
     async with async_session_maker() as db:
         service = UserService(db)
-        
+
         for user_data in SEED_USERS:
             try:
                 user = await service.create_user(UserCreate(**user_data))

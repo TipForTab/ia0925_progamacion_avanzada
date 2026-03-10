@@ -18,12 +18,14 @@ class PropertyQueryBuilder:
         self._pagination_skip = 0
         self._pagination_limit = 100
 
-    def filter_by_id(self, property_id: int) -> 'PropertyQueryBuilder':
+    def filter_by_id(self, property_id: int) -> "PropertyQueryBuilder":
         """Filter by property ID"""
         self.stmt = self.stmt.where(Property.id == property_id)
         return self
 
-    def filter_by_price_range(self, min_price: float = None, max_price: float = None) -> 'PropertyQueryBuilder':
+    def filter_by_price_range(
+        self, min_price: float = None, max_price: float = None
+    ) -> "PropertyQueryBuilder":
         """Filter by price range"""
         if min_price is not None:
             self.stmt = self.stmt.where(Property.price >= min_price)
@@ -31,17 +33,19 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.where(Property.price <= max_price)
         return self
 
-    def filter_by_price_min(self, min_price: float) -> 'PropertyQueryBuilder':
+    def filter_by_price_min(self, min_price: float) -> "PropertyQueryBuilder":
         """Filter by minimum price"""
         self.stmt = self.stmt.where(Property.price >= min_price)
         return self
 
-    def filter_by_price_max(self, max_price: float) -> 'PropertyQueryBuilder':
+    def filter_by_price_max(self, max_price: float) -> "PropertyQueryBuilder":
         """Filter by maximum price"""
         self.stmt = self.stmt.where(Property.price <= max_price)
         return self
 
-    def filter_by_property_type(self, is_apartment: bool = None, is_house: bool = None) -> 'PropertyQueryBuilder':
+    def filter_by_property_type(
+        self, is_apartment: bool = None, is_house: bool = None
+    ) -> "PropertyQueryBuilder":
         """Filter by property type (apartment or house)"""
         if is_apartment is not None:
             self.stmt = self.stmt.where(Property.is_apartment == is_apartment)
@@ -49,17 +53,19 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.where(Property.is_house == is_house)
         return self
 
-    def filter_by_apartment(self, is_apartment: bool = True) -> 'PropertyQueryBuilder':
+    def filter_by_apartment(self, is_apartment: bool = True) -> "PropertyQueryBuilder":
         """Filter for apartments"""
         self.stmt = self.stmt.where(Property.is_apartment == is_apartment)
         return self
 
-    def filter_by_house(self, is_house: bool = True) -> 'PropertyQueryBuilder':
+    def filter_by_house(self, is_house: bool = True) -> "PropertyQueryBuilder":
         """Filter for houses"""
         self.stmt = self.stmt.where(Property.is_house == is_house)
         return self
 
-    def filter_by_rooms(self, min_rooms: int = None, max_rooms: int = None) -> 'PropertyQueryBuilder':
+    def filter_by_rooms(
+        self, min_rooms: int = None, max_rooms: int = None
+    ) -> "PropertyQueryBuilder":
         """Filter by room count range"""
         if min_rooms is not None:
             self.stmt = self.stmt.where(Property.rooms >= min_rooms)
@@ -67,12 +73,14 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.where(Property.rooms <= max_rooms)
         return self
 
-    def filter_by_rooms_exact(self, rooms: int) -> 'PropertyQueryBuilder':
+    def filter_by_rooms_exact(self, rooms: int) -> "PropertyQueryBuilder":
         """Filter by exact room count"""
         self.stmt = self.stmt.where(Property.rooms == rooms)
         return self
 
-    def filter_by_bathrooms(self, min_bathrooms: int = None, max_bathrooms: int = None) -> 'PropertyQueryBuilder':
+    def filter_by_bathrooms(
+        self, min_bathrooms: int = None, max_bathrooms: int = None
+    ) -> "PropertyQueryBuilder":
         """Filter by bathroom count range"""
         if min_bathrooms is not None:
             self.stmt = self.stmt.where(Property.bathrooms >= min_bathrooms)
@@ -80,12 +88,14 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.where(Property.bathrooms <= max_bathrooms)
         return self
 
-    def filter_by_bathrooms_exact(self, bathrooms: int) -> 'PropertyQueryBuilder':
+    def filter_by_bathrooms_exact(self, bathrooms: int) -> "PropertyQueryBuilder":
         """Filter by exact bathroom count"""
         self.stmt = self.stmt.where(Property.bathrooms == bathrooms)
         return self
 
-    def filter_by_square_meters(self, min_sqm: float = None, max_sqm: float = None) -> 'PropertyQueryBuilder':
+    def filter_by_square_meters(
+        self, min_sqm: float = None, max_sqm: float = None
+    ) -> "PropertyQueryBuilder":
         """Filter by square meters range"""
         if min_sqm is not None:
             self.stmt = self.stmt.where(Property.square_meters >= min_sqm)
@@ -93,7 +103,9 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.where(Property.square_meters <= max_sqm)
         return self
 
-    def filter_by_address(self, address_keyword: str, exact: bool = False) -> 'PropertyQueryBuilder':
+    def filter_by_address(
+        self, address_keyword: str, exact: bool = False
+    ) -> "PropertyQueryBuilder":
         """Filter by address keyword"""
         if exact:
             self.stmt = self.stmt.where(Property.address == address_keyword)
@@ -101,7 +113,9 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.where(Property.address.ilike(f"%{address_keyword}%"))
         return self
 
-    def filter_by_title(self, title_keyword: str, exact: bool = False) -> 'PropertyQueryBuilder':
+    def filter_by_title(
+        self, title_keyword: str, exact: bool = False
+    ) -> "PropertyQueryBuilder":
         """Filter by title keyword"""
         if exact:
             self.stmt = self.stmt.where(Property.title == title_keyword)
@@ -109,12 +123,14 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.where(Property.title.ilike(f"%{title_keyword}%"))
         return self
 
-    def filter_by_floor(self, floor: int) -> 'PropertyQueryBuilder':
+    def filter_by_floor(self, floor: int) -> "PropertyQueryBuilder":
         """Filter by building floor"""
         self.stmt = self.stmt.where(Property.building_floor == floor)
         return self
 
-    def filter_by_floor_range(self, min_floor: int = None, max_floor: int = None) -> 'PropertyQueryBuilder':
+    def filter_by_floor_range(
+        self, min_floor: int = None, max_floor: int = None
+    ) -> "PropertyQueryBuilder":
         """Filter by floor range"""
         if min_floor is not None:
             self.stmt = self.stmt.where(Property.building_floor >= min_floor)
@@ -122,12 +138,16 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.where(Property.building_floor <= max_floor)
         return self
 
-    def filter_by_availability(self, is_available: bool = True) -> 'PropertyQueryBuilder':
+    def filter_by_availability(
+        self, is_available: bool = True
+    ) -> "PropertyQueryBuilder":
         """Filter by availability status"""
         self.stmt = self.stmt.where(Property.is_available == is_available)
         return self
 
-    def filter_by_source_url(self, source_url: str, exact: bool = True) -> 'PropertyQueryBuilder':
+    def filter_by_source_url(
+        self, source_url: str, exact: bool = True
+    ) -> "PropertyQueryBuilder":
         """Filter by source URL"""
         if exact:
             self.stmt = self.stmt.where(Property.source_url == source_url)
@@ -135,28 +155,37 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.where(Property.source_url.ilike(f"%{source_url}%"))
         return self
 
-    def filter_by_amenities(self, amenity_key: str, amenity_value: Any = None) -> 'PropertyQueryBuilder':
+    def filter_by_amenities(
+        self, amenity_key: str, amenity_value: Any = None
+    ) -> "PropertyQueryBuilder":
         """Filter by amenities JSON field"""
         if amenity_value is not None:
             # Filter by a specific key-value pair
-            self.stmt = self.stmt.where(Property.amenities[amenity_key].astext == str(amenity_value))
+            self.stmt = self.stmt.where(
+                Property.amenities[amenity_key].astext == str(amenity_value)
+            )
         else:
             # Filter by key existence
             self.stmt = self.stmt.where(Property.amenities.has_key(amenity_key))
         return self
 
-    def filter_with_images(self, has_images: bool = True) -> 'PropertyQueryBuilder':
+    def filter_with_images(self, has_images: bool = True) -> "PropertyQueryBuilder":
         """Filter properties that have/don't have images"""
         # This requires a subquery or join - simplified version
         # You may need to adjust based on your Image model relationship
         if has_images:
             # Properties that have at least one image
             from sqlalchemy.orm import selectinload
+
             self.stmt = self.stmt.options(selectinload(Property.images))
         return self
 
-    def filter_by_date_range(self, start_date: str = None, end_date: str = None,
-                             date_field: str = 'created_at') -> 'PropertyQueryBuilder':
+    def filter_by_date_range(
+        self,
+        start_date: str = None,
+        end_date: str = None,
+        date_field: str = "created_at",
+    ) -> "PropertyQueryBuilder":
         """Filter by date range (created_at or updated_at)"""
         field = getattr(Property, date_field)
         if start_date:
@@ -166,7 +195,7 @@ class PropertyQueryBuilder:
         return self
 
     # Ordering methods
-    def order_by_price(self, ascending: bool = True) -> 'PropertyQueryBuilder':
+    def order_by_price(self, ascending: bool = True) -> "PropertyQueryBuilder":
         """Order by price"""
         if ascending:
             self.stmt = self.stmt.order_by(Property.price.asc())
@@ -174,7 +203,7 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.order_by(Property.price.desc())
         return self
 
-    def order_by_rooms(self, ascending: bool = True) -> 'PropertyQueryBuilder':
+    def order_by_rooms(self, ascending: bool = True) -> "PropertyQueryBuilder":
         """Order by room count"""
         if ascending:
             self.stmt = self.stmt.order_by(Property.rooms.asc())
@@ -182,7 +211,7 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.order_by(Property.rooms.desc())
         return self
 
-    def order_by_square_meters(self, ascending: bool = True) -> 'PropertyQueryBuilder':
+    def order_by_square_meters(self, ascending: bool = True) -> "PropertyQueryBuilder":
         """Order by square meters"""
         if ascending:
             self.stmt = self.stmt.order_by(Property.square_meters.asc())
@@ -190,7 +219,7 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.order_by(Property.square_meters.desc())
         return self
 
-    def order_by_created_at(self, ascending: bool = False) -> 'PropertyQueryBuilder':
+    def order_by_created_at(self, ascending: bool = False) -> "PropertyQueryBuilder":
         """Order by creation date (newest first by default)"""
         if ascending:
             self.stmt = self.stmt.order_by(Property.created_at.asc())
@@ -198,7 +227,7 @@ class PropertyQueryBuilder:
             self.stmt = self.stmt.order_by(Property.created_at.desc())
         return self
 
-    def order_by_updated_at(self, ascending: bool = False) -> 'PropertyQueryBuilder':
+    def order_by_updated_at(self, ascending: bool = False) -> "PropertyQueryBuilder":
         """Order by update date (newest first by default)"""
         if ascending:
             self.stmt = self.stmt.order_by(Property.updated_at.asc())
@@ -207,17 +236,17 @@ class PropertyQueryBuilder:
         return self
 
     # Pagination methods
-    def skip(self, skip: int) -> 'PropertyQueryBuilder':
+    def skip(self, skip: int) -> "PropertyQueryBuilder":
         """Set skip offset for pagination"""
         self._pagination_skip = skip
         return self
 
-    def limit(self, limit: int) -> 'PropertyQueryBuilder':
+    def limit(self, limit: int) -> "PropertyQueryBuilder":
         """Set limit for pagination"""
         self._pagination_limit = limit
         return self
 
-    def paginate(self, skip: int, limit: int) -> 'PropertyQueryBuilder':
+    def paginate(self, skip: int, limit: int) -> "PropertyQueryBuilder":
         """Set both skip and limit"""
         self._pagination_skip = skip
         self._pagination_limit = limit
@@ -231,10 +260,10 @@ class PropertyQueryBuilder:
         """
         # Create aggregation statement based on current filters
         agg_stmt = select(
-            func.min(Property.price).label('min_price'),
-            func.max(Property.price).label('max_price'),
-            func.avg(Property.price).label('avg_price'),
-            func.count(Property.id).label('count')
+            func.min(Property.price).label("min_price"),
+            func.max(Property.price).label("max_price"),
+            func.avg(Property.price).label("avg_price"),
+            func.count(Property.id).label("count"),
         )
 
         # WHERE clauses from current statement
@@ -245,13 +274,15 @@ class PropertyQueryBuilder:
         row = result.first()
 
         return {
-            'min_price': float(row.min_price) if row.min_price else 0,
-            'max_price': float(row.max_price) if row.max_price else 0,
-            'avg_price': float(row.avg_price) if row.avg_price else 0,
-            'count': int(row.count) if row.count else 0
+            "min_price": float(row.min_price) if row.min_price else 0,
+            "max_price": float(row.max_price) if row.max_price else 0,
+            "avg_price": float(row.avg_price) if row.avg_price else 0,
+            "count": int(row.count) if row.count else 0,
         }
 
-    async def aggregate_by_field(self, field_name: str, aggregations: List[str] = None) -> Dict[str, Any]:
+    async def aggregate_by_field(
+        self, field_name: str, aggregations: List[str] = None
+    ) -> Dict[str, Any]:
         """
         Generic aggregation method for any numeric field
 
@@ -263,22 +294,22 @@ class PropertyQueryBuilder:
             Dictionary with aggregation results
         """
         if aggregations is None:
-            aggregations = ['min', 'max', 'avg', 'count']
+            aggregations = ["min", "max", "avg", "count"]
 
         field = getattr(Property, field_name)
         agg_functions = []
 
         for agg in aggregations:
-            if agg == 'min':
-                agg_functions.append(func.min(field).label(f'min_{field_name}'))
-            elif agg == 'max':
-                agg_functions.append(func.max(field).label(f'max_{field_name}'))
-            elif agg == 'avg':
-                agg_functions.append(func.avg(field).label(f'avg_{field_name}'))
-            elif agg == 'sum':
-                agg_functions.append(func.sum(field).label(f'sum_{field_name}'))
-            elif agg == 'count':
-                agg_functions.append(func.count(Property.id).label('count'))
+            if agg == "min":
+                agg_functions.append(func.min(field).label(f"min_{field_name}"))
+            elif agg == "max":
+                agg_functions.append(func.max(field).label(f"max_{field_name}"))
+            elif agg == "avg":
+                agg_functions.append(func.avg(field).label(f"avg_{field_name}"))
+            elif agg == "sum":
+                agg_functions.append(func.sum(field).label(f"sum_{field_name}"))
+            elif agg == "count":
+                agg_functions.append(func.count(Property.id).label("count"))
 
         agg_stmt = select(*agg_functions)
 
@@ -292,8 +323,12 @@ class PropertyQueryBuilder:
         output = {}
         for i, agg in enumerate(aggregations):
             value = row[i]
-            key = f'{agg}_{field_name}' if agg != 'count' else 'count'
-            output[key] = float(value) if value is not None and agg != 'count' else (int(value) if value else 0)
+            key = f"{agg}_{field_name}" if agg != "count" else "count"
+            output[key] = (
+                float(value)
+                if value is not None and agg != "count"
+                else (int(value) if value else 0)
+            )
 
         return output
 
@@ -309,7 +344,7 @@ class PropertyQueryBuilder:
         """
         field = getattr(Property, field_name)
 
-        agg_stmt = select(field, func.count(Property.id).label('count'))
+        agg_stmt = select(field, func.count(Property.id).label("count"))
 
         # Copy WHERE clauses
         if self.stmt.whereclause is not None:
@@ -331,11 +366,14 @@ class PropertyQueryBuilder:
 
     async def all(self) -> List[Property]:
         """Get all results with pagination"""
-        log_debug("Executing query - all()", {
-            "stmt": str(self.stmt),
-            "skip": self._pagination_skip,
-            "limit": self._pagination_limit
-        })
+        log_debug(
+            "Executing query - all()",
+            {
+                "stmt": str(self.stmt),
+                "skip": self._pagination_skip,
+                "limit": self._pagination_limit,
+            },
+        )
         stmt = self.stmt.offset(self._pagination_skip).limit(self._pagination_limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
@@ -366,10 +404,22 @@ class PropertyRepository:
 
     # These methods should NOT be delegated
     _NON_DELEGATED_METHODS = {
-        'query', 'get_by_id', 'get_all', 'get_available', 'get_by_source_url',
-        'create', 'update', 'delete', 'soft_delete',
-        'bulk_update_availability', 'count_total', 'count_available', 'count_by_type',
-        'advanced_search', 'get_price_statistics', 'get_field_statistics'
+        "query",
+        "get_by_id",
+        "get_all",
+        "get_available",
+        "get_by_source_url",
+        "create",
+        "update",
+        "delete",
+        "soft_delete",
+        "bulk_update_availability",
+        "count_total",
+        "count_available",
+        "count_by_type",
+        "advanced_search",
+        "get_price_statistics",
+        "get_field_statistics",
     }
 
     def __init__(self, db: AsyncSession):
@@ -384,7 +434,10 @@ class PropertyRepository:
         Automatically delegate filter_* and order_* methods to a new query builder.
         This eliminates the need for wrapper methods in the repository.
         """
-        if name.startswith(('filter_', 'order_')) and name not in self._NON_DELEGATED_METHODS:
+        if (
+            name.startswith(("filter_", "order_"))
+            and name not in self._NON_DELEGATED_METHODS
+        ):
             # Return a function that creates a new query builder and calls the method
             def delegated_method(*args, **kwargs):
                 query_builder = self.query()
@@ -393,7 +446,9 @@ class PropertyRepository:
 
             return delegated_method
 
-        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+        raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
 
     async def get_by_id(self, property_id: int) -> Optional[Property]:
         """Get property by ID"""
@@ -405,7 +460,13 @@ class PropertyRepository:
 
     async def get_available(self, skip: int = 0, limit: int = 100) -> List[Property]:
         """Get available properties"""
-        return await self.query().filter_by_availability(True).skip(skip).limit(limit).all()
+        return (
+            await self.query()
+            .filter_by_availability(True)
+            .skip(skip)
+            .limit(limit)
+            .all()
+        )
 
     async def get_by_source_url(self, source_url: str) -> Optional[Property]:
         """Get property by source URL"""
@@ -421,7 +482,9 @@ class PropertyRepository:
 
         # Reload with images relationship eagerly loaded
         result = await self.db.execute(
-            select(Property).options(selectinload(Property.images)).where(Property.id == db_property.id)
+            select(Property)
+            .options(selectinload(Property.images))
+            .where(Property.id == db_property.id)
         )
         db_property = result.scalar_one()
 
@@ -455,20 +518,27 @@ class PropertyRepository:
         return await self.update(property_id, {"is_available": False})
 
     # Bulk operations
-    async def bulk_update_availability(self, property_ids: List[int], is_available: bool) -> int:
+    async def bulk_update_availability(
+        self, property_ids: List[int], is_available: bool
+    ) -> int:
         """Bulk update availability status"""
-        stmt = sql_update(Property).where(
-            Property.id.in_(property_ids)
-        ).values(is_available=is_available)
+        stmt = (
+            sql_update(Property)
+            .where(Property.id.in_(property_ids))
+            .values(is_available=is_available)
+        )
 
         result = await self.db.execute(stmt)
         await self.db.commit()
 
-        log_debug("Bulk availability update", {
-            "property_ids": property_ids,
-            "is_available": is_available,
-            "updated_count": result.rowcount
-        })
+        log_debug(
+            "Bulk availability update",
+            {
+                "property_ids": property_ids,
+                "is_available": is_available,
+                "updated_count": result.rowcount,
+            },
+        )
         return result.rowcount
 
     # Statistics
@@ -484,12 +554,11 @@ class PropertyRepository:
         """Get count by property type"""
         apartments = await self.query().filter_by_apartment().count()
         houses = await self.query().filter_by_house().count()
-        return {
-            "apartments": apartments,
-            "houses": houses
-        }
+        return {"apartments": apartments, "houses": houses}
 
-    async def get_price_statistics(self, available_only: bool = True) -> Dict[str, float]:
+    async def get_price_statistics(
+        self, available_only: bool = True
+    ) -> Dict[str, float]:
         """
         Get price statistics using query builder aggregation
 
@@ -507,9 +576,7 @@ class PropertyRepository:
         return await query.aggregate_price_stats()
 
     async def get_field_statistics(
-            self,
-            field_name: str,
-            filters: Dict[str, Any] = None
+        self, field_name: str, filters: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
         Get statistics for any numeric field with optional filters
@@ -525,12 +592,12 @@ class PropertyRepository:
 
         # Apply filters if provided
         if filters:
-            if filters.get('is_available') is not None:
-                query = query.filter_by_availability(filters['is_available'])
-            if filters.get('is_apartment') is not None:
-                query = query.filter_by_apartment(filters['is_apartment'])
-            if filters.get('is_house') is not None:
-                query = query.filter_by_house(filters['is_house'])
+            if filters.get("is_available") is not None:
+                query = query.filter_by_availability(filters["is_available"])
+            if filters.get("is_apartment") is not None:
+                query = query.filter_by_apartment(filters["is_apartment"])
+            if filters.get("is_house") is not None:
+                query = query.filter_by_house(filters["is_house"])
 
         return await query.aggregate_by_field(field_name)
 
@@ -542,94 +609,92 @@ class PropertyRepository:
         query = self.query()
 
         # Property type filters
-        if filters.get('is_apartment') is not None:
-            query = query.filter_by_apartment(filters['is_apartment'])
-        if filters.get('is_house') is not None:
-            query = query.filter_by_house(filters['is_house'])
+        if filters.get("is_apartment") is not None:
+            query = query.filter_by_apartment(filters["is_apartment"])
+        if filters.get("is_house") is not None:
+            query = query.filter_by_house(filters["is_house"])
 
         # Price filters
-        min_price = filters.get('min_price')
-        max_price = filters.get('max_price')
+        min_price = filters.get("min_price")
+        max_price = filters.get("max_price")
         if min_price is not None or max_price is not None:
             query = query.filter_by_price_range(min_price, max_price)
 
         # Room filters
-        min_rooms = filters.get('min_rooms')
-        max_rooms = filters.get('max_rooms')
-        if filters.get('rooms') is not None:
-            query = query.filter_by_rooms_exact(filters['rooms'])
+        min_rooms = filters.get("min_rooms")
+        max_rooms = filters.get("max_rooms")
+        if filters.get("rooms") is not None:
+            query = query.filter_by_rooms_exact(filters["rooms"])
         elif min_rooms is not None or max_rooms is not None:
             query = query.filter_by_rooms(min_rooms, max_rooms)
 
         # Bathroom filters
-        min_bathrooms = filters.get('min_bathrooms')
-        max_bathrooms = filters.get('max_bathrooms')
-        if filters.get('bathrooms') is not None:
-            query = query.filter_by_bathrooms_exact(filters['bathrooms'])
+        min_bathrooms = filters.get("min_bathrooms")
+        max_bathrooms = filters.get("max_bathrooms")
+        if filters.get("bathrooms") is not None:
+            query = query.filter_by_bathrooms_exact(filters["bathrooms"])
         elif min_bathrooms is not None or max_bathrooms is not None:
             query = query.filter_by_bathrooms(min_bathrooms, max_bathrooms)
 
         # Square meters filters
-        min_sqm = filters.get('min_square_meters')
-        max_sqm = filters.get('max_square_meters')
+        min_sqm = filters.get("min_square_meters")
+        max_sqm = filters.get("max_square_meters")
         if min_sqm is not None or max_sqm is not None:
             query = query.filter_by_square_meters(min_sqm, max_sqm)
 
         # Location filters
-        if filters.get('address'):
-            query = query.filter_by_address(filters['address'], exact=False)
+        if filters.get("address"):
+            query = query.filter_by_address(filters["address"], exact=False)
 
-        if filters.get('title'):
-            query = query.filter_by_title(filters['title'], exact=False)
+        if filters.get("title"):
+            query = query.filter_by_title(filters["title"], exact=False)
 
         # Floor filters
-        if filters.get('floor') is not None:
-            query = query.filter_by_floor(filters['floor'])
+        if filters.get("floor") is not None:
+            query = query.filter_by_floor(filters["floor"])
 
-        min_floor = filters.get('min_floor')
-        max_floor = filters.get('max_floor')
+        min_floor = filters.get("min_floor")
+        max_floor = filters.get("max_floor")
         if min_floor is not None or max_floor is not None:
             query = query.filter_by_floor_range(min_floor, max_floor)
 
         # Availability filter
-        if filters.get('is_available') is not None:
-            query = query.filter_by_availability(filters['is_available'])
+        if filters.get("is_available") is not None:
+            query = query.filter_by_availability(filters["is_available"])
 
         # Amenities filter
-        if filters.get('amenity'):
-            query = query.filter_by_amenities(filters['amenity'])
+        if filters.get("amenity"):
+            query = query.filter_by_amenities(filters["amenity"])
 
         # Images filter
-        if filters.get('has_images') is not None:
-            query = query.filter_with_images(filters['has_images'])
+        if filters.get("has_images") is not None:
+            query = query.filter_with_images(filters["has_images"])
 
         # Date filters
-        if filters.get('start_date') or filters.get('end_date'):
-            date_field = filters.get('date_field', 'created_at')
+        if filters.get("start_date") or filters.get("end_date"):
+            date_field = filters.get("date_field", "created_at")
             query = query.filter_by_date_range(
-                filters.get('start_date'),
-                filters.get('end_date'),
-                date_field
+                filters.get("start_date"), filters.get("end_date"), date_field
             )
 
         # Ordering
-        order_by = filters.get('order_by', 'created_at')
-        ascending = filters.get('ascending', False)
+        order_by = filters.get("order_by", "created_at")
+        ascending = filters.get("ascending", False)
 
-        if order_by == 'price':
+        if order_by == "price":
             query = query.order_by_price(ascending)
-        elif order_by == 'rooms':
+        elif order_by == "rooms":
             query = query.order_by_rooms(ascending)
-        elif order_by == 'square_meters':
+        elif order_by == "square_meters":
             query = query.order_by_square_meters(ascending)
-        elif order_by == 'updated_at':
+        elif order_by == "updated_at":
             query = query.order_by_updated_at(ascending)
         else:  # default to created_at
             query = query.order_by_created_at(ascending)
 
         # Pagination
-        skip = filters.get('skip', 0)
-        limit = filters.get('limit', 100)
+        skip = filters.get("skip", 0)
+        limit = filters.get("limit", 100)
         query = query.skip(skip).limit(limit)
 
         return await query.all()

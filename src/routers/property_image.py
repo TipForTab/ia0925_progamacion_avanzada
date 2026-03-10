@@ -8,29 +8,26 @@ from src.schemas import (
     ImageUpdate,
     ImageResponse,
     ImageBulkCreate,
-    ImageTagsUpdate
+    ImageTagsUpdate,
 )
 
-router = APIRouter(
-    prefix="/images",
-    tags=["Images"]
-)
+router = APIRouter(prefix="/images", tags=["Images"])
 
 
 # ============================================================================
 # CREATE ENDPOINTS
 # ============================================================================
 
+
 @router.post(
     "/",
     response_model=ImageResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new image",
-    description="Create a new image for a property"
+    description="Create a new image for a property",
 )
 async def create_image(
-        image_data: ImageCreate,
-        service: ImageService = Depends(get_image_service)
+    image_data: ImageCreate, service: ImageService = Depends(get_image_service)
 ):
     """
     Create a new image.
@@ -48,11 +45,10 @@ async def create_image(
     response_model=List[ImageResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Bulk create images",
-    description="Create multiple images for a property at once"
+    description="Create multiple images for a property at once",
 )
 async def bulk_create_images(
-        bulk_data: ImageBulkCreate,
-        service: ImageService = Depends(get_image_service)
+    bulk_data: ImageBulkCreate, service: ImageService = Depends(get_image_service)
 ):
     """
     Bulk create images for a property.
@@ -70,16 +66,19 @@ async def bulk_create_images(
 # READ ENDPOINTS
 # ============================================================================
 
+
 @router.get(
     "/",
     response_model=List[ImageResponse],
     summary="Get all images",
-    description="Get a paginated list of all images"
+    description="Get a paginated list of all images",
 )
 async def get_images(
-        skip: int = Query(0, ge=0, description="Number of records to skip"),
-        limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-        service: ImageService = Depends(get_image_service)
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(
+        100, ge=1, le=1000, description="Maximum number of records to return"
+    ),
+    service: ImageService = Depends(get_image_service),
 ):
     """Get all images with pagination"""
     return await service.get_all_images(skip=skip, limit=limit)
@@ -89,12 +88,9 @@ async def get_images(
     "/{image_id}",
     response_model=ImageResponse,
     summary="Get image by ID",
-    description="Get detailed information about a specific image"
+    description="Get detailed information about a specific image",
 )
-async def get_image(
-        image_id: int,
-        service: ImageService = Depends(get_image_service)
-):
+async def get_image(image_id: int, service: ImageService = Depends(get_image_service)):
     """Get a specific image by ID"""
     return await service.get_image_by_id(image_id)
 
@@ -103,13 +99,15 @@ async def get_image(
     "/property/{property_id}",
     response_model=List[ImageResponse],
     summary="Get images by property",
-    description="Get all images for a specific property"
+    description="Get all images for a specific property",
 )
 async def get_images_by_property(
-        property_id: int,
-        skip: int = Query(0, ge=0, description="Number of records to skip"),
-        limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-        service: ImageService = Depends(get_image_service)
+    property_id: int,
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(
+        100, ge=1, le=1000, description="Maximum number of records to return"
+    ),
+    service: ImageService = Depends(get_image_service),
 ):
     """
     Get all images for a specific property.
@@ -123,12 +121,14 @@ async def get_images_by_property(
     "/without-tags/list",
     response_model=List[ImageResponse],
     summary="Get images without tags",
-    description="Get images that don't have calculated tags"
+    description="Get images that don't have calculated tags",
 )
 async def get_images_without_tags(
-        skip: int = Query(0, ge=0, description="Number of records to skip"),
-        limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-        service: ImageService = Depends(get_image_service)
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(
+        100, ge=1, le=1000, description="Maximum number of records to return"
+    ),
+    service: ImageService = Depends(get_image_service),
 ):
     """
     Get images without calculated tags.
@@ -142,12 +142,14 @@ async def get_images_without_tags(
     "/recent/list",
     response_model=List[ImageResponse],
     summary="Get recent images",
-    description="Get images created in the last N days"
+    description="Get images created in the last N days",
 )
 async def get_recent_images(
-        days: int = Query(7, ge=1, le=365, description="Number of days to look back"),
-        limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-        service: ImageService = Depends(get_image_service)
+    days: int = Query(7, ge=1, le=365, description="Number of days to look back"),
+    limit: int = Query(
+        100, ge=1, le=1000, description="Maximum number of records to return"
+    ),
+    service: ImageService = Depends(get_image_service),
 ):
     """
     Get images created in the last N days.
@@ -162,11 +164,10 @@ async def get_recent_images(
     "/search",
     response_model=List[ImageResponse],
     summary="Advanced image search",
-    description="Search images with multiple filters and sorting options"
+    description="Search images with multiple filters and sorting options",
 )
 async def search_images(
-        filters: Dict[str, Any],
-        service: ImageService = Depends(get_image_service)
+    filters: Dict[str, Any], service: ImageService = Depends(get_image_service)
 ):
     """
     Advanced search with filters.
@@ -199,16 +200,17 @@ async def search_images(
 # UPDATE ENDPOINTS
 # ============================================================================
 
+
 @router.put(
     "/{image_id}",
     response_model=ImageResponse,
     summary="Update image",
-    description="Update an existing image's information"
+    description="Update an existing image's information",
 )
 async def update_image(
-        image_id: int,
-        image_data: ImageUpdate,
-        service: ImageService = Depends(get_image_service)
+    image_id: int,
+    image_data: ImageUpdate,
+    service: ImageService = Depends(get_image_service),
 ):
     """
     Update an image.
@@ -225,12 +227,12 @@ async def update_image(
     "/{image_id}",
     response_model=ImageResponse,
     summary="Partially update image",
-    description="Partially update an image (same as PUT)"
+    description="Partially update an image (same as PUT)",
 )
 async def partial_update_image(
-        image_id: int,
-        image_data: ImageUpdate,
-        service: ImageService = Depends(get_image_service)
+    image_id: int,
+    image_data: ImageUpdate,
+    service: ImageService = Depends(get_image_service),
 ):
     """Partial update (same as PUT for this API)"""
     return await service.update_image(image_id, image_data)
@@ -240,12 +242,12 @@ async def partial_update_image(
     "/{image_id}/tags",
     response_model=ImageResponse,
     summary="Update image tags",
-    description="Update only the calculated_tags field for an image"
+    description="Update only the calculated_tags field for an image",
 )
 async def update_image_tags(
-        image_id: int,
-        tags_data: ImageTagsUpdate,
-        service: ImageService = Depends(get_image_service)
+    image_id: int,
+    tags_data: ImageTagsUpdate,
+    service: ImageService = Depends(get_image_service),
 ):
     """
     Update only the calculated_tags field.
@@ -256,20 +258,19 @@ async def update_image_tags(
     return await service.update_image_tags(image_id, tags_data)
 
 
-
 # ============================================================================
 # DELETE ENDPOINTS
 # ============================================================================
+
 
 @router.delete(
     "/{image_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete image",
-    description="Permanently delete an image"
+    description="Permanently delete an image",
 )
 async def delete_image(
-        image_id: int,
-        service: ImageService = Depends(get_image_service)
+    image_id: int, service: ImageService = Depends(get_image_service)
 ):
     """
     Hard delete an image.
@@ -281,11 +282,10 @@ async def delete_image(
     "/property/{property_id}/all",
     response_model=Dict[str, Any],
     summary="Delete all images for a property",
-    description="Delete all images associated with a specific property"
+    description="Delete all images associated with a specific property",
 )
 async def delete_images_by_property(
-        property_id: int,
-        service: ImageService = Depends(get_image_service)
+    property_id: int, service: ImageService = Depends(get_image_service)
 ):
     """
     Delete all images for a specific property.
@@ -300,15 +300,16 @@ async def delete_images_by_property(
 # UTILITY ENDPOINTS
 # ============================================================================
 
+
 @router.get(
     "/check/url-exists",
     response_model=Dict[str, Any],
     summary="Check if URL exists",
-    description="Check if an image with this URL already exists"
+    description="Check if an image with this URL already exists",
 )
 async def check_url_exists(
-        url: str = Query(..., description="Image URL to check"),
-        service: ImageService = Depends(get_image_service)
+    url: str = Query(..., description="Image URL to check"),
+    service: ImageService = Depends(get_image_service),
 ):
     """
     Check if an image with this URL already exists.
@@ -325,11 +326,9 @@ async def check_url_exists(
     "/duplicates/find",
     response_model=List[Dict[str, Any]],
     summary="Find duplicate images",
-    description="Find images with duplicate URLs"
+    description="Find images with duplicate URLs",
 )
-async def find_duplicate_images(
-        service: ImageService = Depends(get_image_service)
-):
+async def find_duplicate_images(service: ImageService = Depends(get_image_service)):
     """
     Find images with duplicate URLs.
 
@@ -343,15 +342,14 @@ async def find_duplicate_images(
 # STATISTICS ENDPOINT
 # ============================================================================
 
+
 @router.get(
     "/statistics/summary",
     response_model=Dict[str, Any],
     summary="Get image statistics",
-    description="Get comprehensive statistics about all images"
+    description="Get comprehensive statistics about all images",
 )
-async def get_statistics(
-        service: ImageService = Depends(get_image_service)
-):
+async def get_statistics(service: ImageService = Depends(get_image_service)):
     """
     Get image statistics including:
     - Total images count
