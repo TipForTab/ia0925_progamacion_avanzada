@@ -1,2 +1,1 @@
-cd ./src/
-pytest test/ -v
+pytest ./src/test/ -v
