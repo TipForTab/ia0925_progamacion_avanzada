@@ -47,7 +47,7 @@ async def create_property(
     "/",
     response_model=List[PropertyResponse],
     summary="Get all properties",
-    description="Get a paginated list of all properties"
+    description="Get a paginated list of all properties",
 )
 async def get_properties(
         skip: int = Query(0, ge=0, description="Number of records to skip"),
@@ -68,7 +68,8 @@ async def get_properties(
 async def get_available_properties(
         skip: int = Query(0, ge=0, description="Number of records to skip"),
         limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-        service: PropertyService = Depends(get_property_service)
+        service: PropertyService = Depends(get_property_service),
+        current_user: User = Depends(get_current_user)
 ):
     """Get only available properties"""
     return await service.get_available_properties(skip=skip, limit=limit)
@@ -82,7 +83,8 @@ async def get_available_properties(
 )
 async def get_property(
         property_id: int,
-        service: PropertyService = Depends(get_property_service)
+        service: PropertyService = Depends(get_property_service),
+        current_user: User = Depends(get_current_user)
 ):
     """Get a specific property by ID"""
     return await service.get_property_by_id(property_id)
