@@ -1,27 +1,49 @@
 """
 Test fixtures for properties
 """
+
 from typing import List, Dict, Any
 import random
 
 
 def get_seville_property_fixtures() -> List[Dict[str, Any]]:
     """
-        Property fixtures for Seville, Spain
+    Property fixtures for Seville, Spain
     """
 
     seville_areas = [
-        "Centro Histórico", "Triana", "Los Remedios", "Nervión", "Macarena",
-        "Cerro-Amate", "San Pablo-Santa Justa", "Este-Alcosa-Torreblanca",
-        "Bellavista-La Palmera", "Sur", "Casco Antiguo", "Santa Cruz",
-        "Alameda de Hércules", "La Cartuja", "Sevilla Este"
+        "Centro Histórico",
+        "Triana",
+        "Los Remedios",
+        "Nervión",
+        "Macarena",
+        "Cerro-Amate",
+        "San Pablo-Santa Justa",
+        "Este-Alcosa-Torreblanca",
+        "Bellavista-La Palmera",
+        "Sur",
+        "Casco Antiguo",
+        "Santa Cruz",
+        "Alameda de Hércules",
+        "La Cartuja",
+        "Sevilla Este",
     ]
     street_names = [
-        "Calle Sierpes", "Avenida de la Constitución", "Calle Betis", 
-        "Calle Feria", "Calle San Fernando", "Plaza de Armas",
-        "Calle Alfarería", "Avenida de Jerez", "Calle Asunción",
-        "Plaza Nueva", "Calle Tetuán", "Avenida Eduardo Dato",
-        "Calle Luis Montoto", "Plaza del Salvador", "Calle O'Donnell"
+        "Calle Sierpes",
+        "Avenida de la Constitución",
+        "Calle Betis",
+        "Calle Feria",
+        "Calle San Fernando",
+        "Plaza de Armas",
+        "Calle Alfarería",
+        "Avenida de Jerez",
+        "Calle Asunción",
+        "Plaza Nueva",
+        "Calle Tetuán",
+        "Avenida Eduardo Dato",
+        "Calle Luis Montoto",
+        "Plaza del Salvador",
+        "Calle O'Donnell",
     ]
     common_amenities = [
         {"aire_acondicionado": True, "calefaccion": True, "ascensor": True},
@@ -59,10 +81,12 @@ def get_seville_property_fixtures() -> List[Dict[str, Any]]:
             "square_meters": float(random.randint(45, 120)),
             "is_apartment": prop_type["is_apartment"],
             "is_house": prop_type["is_house"],
-            "building_floor": random.randint(0, 8) if prop_type["is_apartment"] else None,
+            "building_floor": (
+                random.randint(0, 8) if prop_type["is_apartment"] else None
+            ),
             "source_url": f"https://idealista.com/inmueble/{random.randint(10000000, 99999999)}/",
             "is_available": random.choice([True, True, True, False]),  # 75% available
-            "amenities": random.choice(common_amenities)
+            "amenities": random.choice(common_amenities),
         }
         fixtures.append(fixture)
     for i in range(8):
@@ -86,11 +110,11 @@ def get_seville_property_fixtures() -> List[Dict[str, Any]]:
                 **random.choice(common_amenities),
                 "jardin_privado": True,
                 "garaje": True,
-                "barbacoa": random.choice([True, False])
-            }
+                "barbacoa": random.choice([True, False]),
+            },
         }
         fixtures.append(fixture)
-    
+
     return fixtures
 
 
@@ -115,8 +139,8 @@ def get_specific_test_properties() -> List[Dict[str, Any]]:
                 "aire_acondicionado": True,
                 "ascensor": True,
                 "balcon": True,
-                "amueblado": False
-            }
+                "amueblado": False,
+            },
         },
         {
             "title": "Casa familiar en Triana",
@@ -134,8 +158,8 @@ def get_specific_test_properties() -> List[Dict[str, Any]]:
                 "jardin_privado": True,
                 "garaje": True,
                 "terraza": True,
-                "chimenea": True
-            }
+                "chimenea": True,
+            },
         },
         {
             "title": "Estudio céntrico - No disponible",
@@ -152,7 +176,7 @@ def get_specific_test_properties() -> List[Dict[str, Any]]:
             "amenities": {
                 "aire_acondicionado": True,
                 "amueblado": True,
-                "internet": True
-            }
-        }
+                "internet": True,
+            },
+        },
     ]

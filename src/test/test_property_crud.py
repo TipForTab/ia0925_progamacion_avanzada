@@ -20,11 +20,7 @@ class TestPropertyCRUDEndpoints:
         "building_floor": 4,
         "source_url": "https://example.com/property/123",
         "is_available": True,
-        "amenities": {
-            "elevator": True,
-            "parking": True,
-            "terrace": True
-        }
+        "amenities": {"elevator": True, "parking": True, "terrace": True},
     }
 
     # ========================================================================
@@ -56,7 +52,9 @@ class TestPropertyCRUDEndpoints:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    async def test_create_property_invalid_square_meters(self, async_client: AsyncClient):
+    async def test_create_property_invalid_square_meters(
+        self, async_client: AsyncClient
+    ):
         """Test creating property with invalid square meters"""
         invalid_data = self.valid_property.copy()
         invalid_data["square_meters"] = 15000  # Above maximum of 10000
@@ -77,7 +75,9 @@ class TestPropertyCRUDEndpoints:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    async def test_create_property_duplicate_source_url(self, async_client: AsyncClient):
+    async def test_create_property_duplicate_source_url(
+        self, async_client: AsyncClient
+    ):
         """Test creating property with duplicate source_url"""
         # Create first property
         response1 = await async_client.post("/properties/", json=self.valid_property)
@@ -87,7 +87,9 @@ class TestPropertyCRUDEndpoints:
         response2 = await async_client.post("/properties/", json=self.valid_property)
         assert response2.status_code == status.HTTP_409_CONFLICT
 
-    async def test_create_property_missing_required_fields(self, async_client: AsyncClient):
+    async def test_create_property_missing_required_fields(
+        self, async_client: AsyncClient
+    ):
         """Test creating property with missing required fields"""
         invalid_data = {
             "title": "Incomplete Property"
@@ -105,7 +107,9 @@ class TestPropertyCRUDEndpoints:
     async def test_get_property_by_id_success(self, async_client: AsyncClient):
         """Test getting a property by ID"""
         # Create property first
-        create_response = await async_client.post("/properties/", json=self.valid_property)
+        create_response = await async_client.post(
+            "/properties/", json=self.valid_property
+        )
         created_property = create_response.json()
         property_id = created_property["id"]
 
@@ -169,7 +173,9 @@ class TestPropertyCRUDEndpoints:
         available_property = self.valid_property.copy()
         available_property["source_url"] = "https://example.com/available"
         available_property["is_available"] = True
-        create_response1 = await async_client.post("/properties/", json=available_property)
+        create_response1 = await async_client.post(
+            "/properties/", json=available_property
+        )
 
         # Create unavailable property
         unavailable_property = self.valid_property.copy()
@@ -194,17 +200,17 @@ class TestPropertyCRUDEndpoints:
     async def test_update_property_success(self, async_client: AsyncClient):
         """Test updating a property"""
         # Create property
-        create_response = await async_client.post("/properties/", json=self.valid_property)
+        create_response = await async_client.post(
+            "/properties/", json=self.valid_property
+        )
         created_property = create_response.json()
         property_id = created_property["id"]
 
         # Update property
-        update_data = {
-            "price": 275000,
-            "rooms": 4,
-            "is_available": False
-        }
-        response = await async_client.put(f"/properties/{property_id}", json=update_data)
+        update_data = {"price": 275000, "rooms": 4, "is_available": False}
+        response = await async_client.put(
+            f"/properties/{property_id}", json=update_data
+        )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -216,12 +222,16 @@ class TestPropertyCRUDEndpoints:
     async def test_update_property_partial(self, async_client: AsyncClient):
         """Test partial update (PATCH)"""
         # Create property
-        create_response = await async_client.post("/properties/", json=self.valid_property)
+        create_response = await async_client.post(
+            "/properties/", json=self.valid_property
+        )
         property_id = create_response.json()["id"]
 
         # Partial update
         update_data = {"price": 300000}
-        response = await async_client.patch(f"/properties/{property_id}", json=update_data)
+        response = await async_client.patch(
+            f"/properties/{property_id}", json=update_data
+        )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -238,16 +248,22 @@ class TestPropertyCRUDEndpoints:
     async def test_update_property_invalid_data(self, async_client: AsyncClient):
         """Test updating with invalid data"""
         # Create property
-        create_response = await async_client.post("/properties/", json=self.valid_property)
+        create_response = await async_client.post(
+            "/properties/", json=self.valid_property
+        )
         property_id = create_response.json()["id"]
 
         # Try to update with invalid price
         update_data = {"price": 50}  # Below minimum
-        response = await async_client.put(f"/properties/{property_id}", json=update_data)
+        response = await async_client.put(
+            f"/properties/{property_id}", json=update_data
+        )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    async def test_update_property_duplicate_source_url(self, async_client: AsyncClient):
+    async def test_update_property_duplicate_source_url(
+        self, async_client: AsyncClient
+    ):
         """Test updating with duplicate source_url"""
         # Create first property
         property1 = self.valid_property.copy()
@@ -262,14 +278,18 @@ class TestPropertyCRUDEndpoints:
 
         # Try to update property2 with property1's source_url
         update_data = {"source_url": "https://example.com/prop1"}
-        response = await async_client.put(f"/properties/{property2_id}", json=update_data)
+        response = await async_client.put(
+            f"/properties/{property2_id}", json=update_data
+        )
 
         assert response.status_code == status.HTTP_409_CONFLICT
 
     async def test_update_property_no_fields(self, async_client: AsyncClient):
         """Test updating with no fields provided"""
         # Create property
-        create_response = await async_client.post("/properties/", json=self.valid_property)
+        create_response = await async_client.post(
+            "/properties/", json=self.valid_property
+        )
         property_id = create_response.json()["id"]
 
         # Try to update with empty data
@@ -346,7 +366,7 @@ class TestPropertyCRUDEndpoints:
             "square_meters": 60,
             "is_apartment": True,
             "is_house": False,
-            "source_url": "https://example.com/minimal"
+            "source_url": "https://example.com/minimal",
         }
 
         response = await async_client.post("/properties/", json=minimal_property)
@@ -355,17 +375,33 @@ class TestPropertyCRUDEndpoints:
         data = response.json()
         assert data["is_available"] == True  # Default value
 
-    async def test_property_response_includes_all_fields(self, async_client: AsyncClient):
+    async def test_property_response_includes_all_fields(
+        self, async_client: AsyncClient
+    ):
         """Test that property response includes all expected fields"""
-        create_response = await async_client.post("/properties/", json=self.valid_property)
+        create_response = await async_client.post(
+            "/properties/", json=self.valid_property
+        )
         data = create_response.json()
 
         # Check all expected fields are present
         expected_fields = [
-            "id", "title", "address", "price", "rooms", "bathrooms",
-            "square_meters", "is_apartment", "is_house", "building_floor",
-            "source_url", "is_available", "amenities", "created_at",
-            "updated_at", "images"
+            "id",
+            "title",
+            "address",
+            "price",
+            "rooms",
+            "bathrooms",
+            "square_meters",
+            "is_apartment",
+            "is_house",
+            "building_floor",
+            "source_url",
+            "is_available",
+            "amenities",
+            "created_at",
+            "updated_at",
+            "images",
         ]
 
         for field in expected_fields:

@@ -1,3 +1,6 @@
 [submodule "modules/data-extraction-service"]
 	path = modules/data-extraction-service
 	url = https://github.com/dgorozz/data-extraction-service.git
+[submodule "data-extraction-service"]
+	path = data-extraction-service
+	url = https://github.com/dgorozz/data-extraction-service.git

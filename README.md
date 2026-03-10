@@ -122,5 +122,5 @@ git submodule add https://github.com/dgorozz/data-extraction-service.git modules
 git submodule update --init --recursive
 
 # Correr con Microservicios en local
-docker compose -f docker-compose-full.yml up --build
+docker compose -f docker-compose-full.yml --profile tools up --build -d
 docker compose -f docker-compose-full.yml down 
