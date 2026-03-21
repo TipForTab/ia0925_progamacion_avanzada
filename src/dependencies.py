@@ -22,39 +22,11 @@ async def get_auth_service(db: AsyncSession = Depends(get_async_db)) -> AuthServ
     """Dependency to get AuthService instance"""
     return AuthService(db)
 
-
-async def get_user_service(db: AsyncSession = Depends(get_async_db)) -> UserService:
-    """Dependency to get UserService instance"""
-    return UserService(db)
-
-
-# Authentication dependency
-async def get_current_user(
-    username: str = Depends(verify_token), db: AsyncSession = Depends(get_async_db)
-) -> User:
-    """
-    Get current authenticated user from JWT token.
-
-    Use this dependency to protect routes that require authentication.
-
-    Usage:
-        @router.post("/properties")
-        async def create_property(
-            property_data: PropertyCreate,
-            current_user: User = Depends(get_current_user),  # 🔒 Protected
-            db: AsyncSession = Depends(get_async_db)
-        ):
-            # Only authenticated users can access this route
-            ...
-    """
-    user_service = UserService(db)
-    user = await user_service.get_user_by_username(username)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
+#A MODIFICAR CUANDO SEA REAL
+async def get_current_user(auth_service: AuthService = Depends(get_auth_service)):
+    """Dependency to get current authenticated user"""
+    # Aquí deberías implementar la lógica para extraer el token de la cabecera,
+    # verificarlo y devolver el usuario asociado. Esto es solo un ejemplo.
+    token = "fake-token-for-demo"  # En un caso real, extraerías esto de la cabecera Authorization
+    user = await auth_service.authenticate_user(token)
     return user
