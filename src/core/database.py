@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from src.conf import settings
 
+
 # Dependency to get async database session
 async def get_async_db():
     async with AsyncSessionLocal() as session:
@@ -51,15 +52,18 @@ async def check_db_health():
 
 Base = declarative_base()
 # Determine database configuration based on settings
-print(f'USING DATABASE_URL {settings.database_url} -- settings.is_production {settings.is_production}')
+print(
+    f"USING DATABASE_URL {settings.database_url} -- settings.is_production {settings.is_production}"
+)
 if settings.is_production or settings.database_url.startswith("postgresql"):
     # Use PostgreSQL with asyncpg
     if settings.database_url.startswith("postgresql://"):
         # Convert to asyncpg URL if needed
-        database_url = settings.database_url.replace("postgresql://", "postgresql+asyncpg://")
+        database_url = settings.database_url.replace(
+            "postgresql://", "postgresql+asyncpg://"
+        )
     else:
         database_url = settings.database_url
-
 
     # Async engine for PostgreSQL with connection pool
     engine = create_async_engine(
@@ -69,11 +73,13 @@ if settings.is_production or settings.database_url.startswith("postgresql"):
         pool_size=10,
         max_overflow=20,
         pool_pre_ping=True,
-        pool_recycle=3600
+        pool_recycle=3600,
     )
 
     # Async session factory
-    AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    AsyncSessionLocal = sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
 
     # Sync engine for migrations and other operations
     sync_database_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
@@ -83,13 +89,15 @@ if settings.is_production or settings.database_url.startswith("postgresql"):
         pool_size=10,
         max_overflow=20,
         pool_pre_ping=True,
-        pool_recycle=3600
+        pool_recycle=3600,
     )
 else:
     # SQLite for development/testing
     if settings.database_url.startswith("sqlite:///"):
         # Convert to aiosqlite URL
-        database_url = settings.database_url.replace("sqlite:///", "sqlite+aiosqlite:///")
+        database_url = settings.database_url.replace(
+            "sqlite:///", "sqlite+aiosqlite:///"
+        )
     else:
         database_url = settings.database_url
     engine = create_async_engine(
@@ -97,7 +105,9 @@ else:
         echo=settings.is_development,
         future=True,
     )
-    AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    AsyncSessionLocal = sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
     # Sync engine for migrations and other operations
     sync_database_url = database_url.replace("sqlite+aiosqlite:///", "sqlite:///")
     sync_engine = create_engine(

@@ -9,10 +9,11 @@ from typing import AsyncGenerator
 
 from src.main import app
 from src.core import Base, get_async_db
+from src.core.security import create_access_token, hash_password
+from src.models.user import User
 from src.repositories import PropertyRepository
 
-
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 
 
 @pytest.fixture(scope="session")
@@ -32,9 +33,7 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
 
     # Create async engine
     engine = create_async_engine(
-        f"sqlite+aiosqlite:///{temp_db.name}",
-        echo=False,
-        future=True
+        f"sqlite+aiosqlite:///{temp_db.name}", echo=False, future=True
     )
 
     # Create session factory
@@ -64,7 +63,7 @@ async def property_repo(test_db: AsyncSession):
 
 @pytest.fixture(scope="function")
 async def async_client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Create async HTTP client for testing endpoints"""
+    """Create async HTTP client for testing endpoints with JWT auth"""
 
     async def override_get_async_db():
         """Override the database dependency"""
@@ -73,9 +72,25 @@ async def async_client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, Non
     # Override the dependency
     app.dependency_overrides[get_async_db] = override_get_async_db
 
-    # Create async client
+    # Seed a test user for JWT authentication
+    test_user = User(
+        username="testuser",
+        email="testuser@test.com",
+        hashed_password=hash_password("testpassword123"),
+    )
+    test_db.add(test_user)
+    await test_db.commit()
+
+    # Generate a valid JWT token for the test user
+    token = create_access_token(data={"sub": test_user.username})
+
+    # Create async client with Authorization header
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
         yield client
 
     # Clear overrides

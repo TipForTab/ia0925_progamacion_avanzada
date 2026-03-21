@@ -18,7 +18,7 @@ class TestImageCRUDEndpoints:
         "is_apartment": True,
         "is_house": False,
         "source_url": "https://example.com/test-property",
-        "is_available": True
+        "is_available": True,
     }
 
     valid_image = {
@@ -27,8 +27,8 @@ class TestImageCRUDEndpoints:
         "calculated_tags": {
             "room_type": "bedroom",
             "features": ["window", "door"],
-            "style": "modern"
-        }
+            "style": "modern",
+        },
     }
 
     # ========================================================================
@@ -42,7 +42,9 @@ class TestImageCRUDEndpoints:
         assert response.status_code == status.HTTP_201_CREATED
         return response.json()["id"]
 
-    async def create_test_image(self, async_client: AsyncClient, property_id: int, img_url: str = None) -> dict:
+    async def create_test_image(
+        self, async_client: AsyncClient, property_id: int, img_url: str = None
+    ) -> dict:
         """Helper to create a test image and return the response data"""
         image_data = self.valid_image.copy()
         image_data["property_id"] = property_id
@@ -81,7 +83,7 @@ class TestImageCRUDEndpoints:
 
         image_data = {
             "property_id": property_id,
-            "img_url": "https://example.com/images/no-tags.jpg"
+            "img_url": "https://example.com/images/no-tags.jpg",
         }
 
         response = await async_client.post("/images/", json=image_data)
@@ -111,7 +113,9 @@ class TestImageCRUDEndpoints:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    async def test_create_image_duplicate_url_same_property(self, async_client: AsyncClient):
+    async def test_create_image_duplicate_url_same_property(
+        self, async_client: AsyncClient
+    ):
         """Test creating image with duplicate URL for same property"""
         property_id = await self.create_test_property(async_client)
 
@@ -126,7 +130,9 @@ class TestImageCRUDEndpoints:
         response2 = await async_client.post("/images/", json=image_data)
         assert response2.status_code == status.HTTP_409_CONFLICT
 
-    async def test_create_image_same_url_different_properties(self, async_client: AsyncClient):
+    async def test_create_image_same_url_different_properties(
+        self, async_client: AsyncClient
+    ):
         """Test that same URL can be used for different properties"""
         property1_id = await self.create_test_property(async_client)
 
@@ -148,7 +154,9 @@ class TestImageCRUDEndpoints:
         response2 = await async_client.post("/images/", json=image_data2)
         assert response2.status_code == status.HTTP_201_CREATED
 
-    async def test_create_image_missing_required_fields(self, async_client: AsyncClient):
+    async def test_create_image_missing_required_fields(
+        self, async_client: AsyncClient
+    ):
         """Test creating image with missing required fields"""
         invalid_data = {
             "property_id": 1
@@ -172,8 +180,8 @@ class TestImageCRUDEndpoints:
             "image_urls": [
                 "https://example.com/images/bulk1.jpg",
                 "https://example.com/images/bulk2.jpg",
-                "https://example.com/images/bulk3.jpg"
-            ]
+                "https://example.com/images/bulk3.jpg",
+            ],
         }
 
         response = await async_client.post("/images/bulk", json=bulk_data)
@@ -194,15 +202,17 @@ class TestImageCRUDEndpoints:
             "property_id": 999999,
             "image_urls": [
                 "https://example.com/images/test1.jpg",
-                "https://example.com/images/test2.jpg"
-            ]
+                "https://example.com/images/test2.jpg",
+            ],
         }
 
         response = await async_client.post("/images/bulk", json=bulk_data)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_bulk_create_images_invalid_url_format(self, async_client: AsyncClient):
+    async def test_bulk_create_images_invalid_url_format(
+        self, async_client: AsyncClient
+    ):
         """Test bulk create with invalid URL"""
         property_id = await self.create_test_property(async_client)
 
@@ -211,8 +221,8 @@ class TestImageCRUDEndpoints:
             "image_urls": [
                 "https://example.com/images/valid.jpg",
                 "invalid-url",  # Invalid
-                "https://example.com/images/valid2.jpg"
-            ]
+                "https://example.com/images/valid2.jpg",
+            ],
         }
 
         response = await async_client.post("/images/bulk", json=bulk_data)
@@ -225,9 +235,7 @@ class TestImageCRUDEndpoints:
 
         # Create first image
         await self.create_test_image(
-            async_client,
-            property_id,
-            "https://example.com/images/existing.jpg"
+            async_client, property_id, "https://example.com/images/existing.jpg"
         )
 
         # Try to bulk create including the existing URL
@@ -235,8 +243,8 @@ class TestImageCRUDEndpoints:
             "property_id": property_id,
             "image_urls": [
                 "https://example.com/images/existing.jpg",  # Already exists
-                "https://example.com/images/new.jpg"
-            ]
+                "https://example.com/images/new.jpg",
+            ],
         }
 
         response = await async_client.post("/images/bulk", json=bulk_data)
@@ -247,10 +255,7 @@ class TestImageCRUDEndpoints:
         """Test bulk create with empty URL list"""
         property_id = await self.create_test_property(async_client)
 
-        bulk_data = {
-            "property_id": property_id,
-            "image_urls": []
-        }
+        bulk_data = {"property_id": property_id, "image_urls": []}
 
         response = await async_client.post("/images/bulk", json=bulk_data)
 
@@ -262,7 +267,7 @@ class TestImageCRUDEndpoints:
 
         bulk_data = {
             "property_id": property_id,
-            "image_urls": [f"https://example.com/images/img{i}.jpg" for i in range(51)]
+            "image_urls": [f"https://example.com/images/img{i}.jpg" for i in range(51)],
         }
 
         response = await async_client.post("/images/bulk", json=bulk_data)
@@ -299,9 +304,7 @@ class TestImageCRUDEndpoints:
         # Create multiple images
         for i in range(3):
             await self.create_test_image(
-                async_client,
-                property_id,
-                f"https://example.com/images/test{i}.jpg"
+                async_client, property_id, f"https://example.com/images/test{i}.jpg"
             )
 
         response = await async_client.get("/images/?skip=0&limit=10")
@@ -318,9 +321,7 @@ class TestImageCRUDEndpoints:
         # Create 5 images
         for i in range(5):
             await self.create_test_image(
-                async_client,
-                property_id,
-                f"https://example.com/images/page{i}.jpg"
+                async_client, property_id, f"https://example.com/images/page{i}.jpg"
             )
 
         # Get first page (2 items)
@@ -345,9 +346,7 @@ class TestImageCRUDEndpoints:
         # Create images for this property
         for i in range(3):
             await self.create_test_image(
-                async_client,
-                property_id,
-                f"https://example.com/images/prop{i}.jpg"
+                async_client, property_id, f"https://example.com/images/prop{i}.jpg"
             )
 
         response = await async_client.get(f"/images/property/{property_id}")
@@ -374,7 +373,7 @@ class TestImageCRUDEndpoints:
         # Create image without tags
         image_data = {
             "property_id": property_id,
-            "img_url": "https://example.com/images/no-tags1.jpg"
+            "img_url": "https://example.com/images/no-tags1.jpg",
         }
         await async_client.post("/images/", json=image_data)
 
@@ -426,10 +425,7 @@ class TestImageCRUDEndpoints:
 
         update_data = {
             "img_url": "https://example.com/images/updated.jpg",
-            "calculated_tags": {
-                "room_type": "kitchen",
-                "features": ["sink", "stove"]
-            }
+            "calculated_tags": {"room_type": "kitchen", "features": ["sink", "stove"]},
         }
         response = await async_client.put(f"/images/{image_id}", json=update_data)
 
@@ -444,11 +440,7 @@ class TestImageCRUDEndpoints:
         created_image = await self.create_test_image(async_client, property_id)
         image_id = created_image["id"]
 
-        update_data = {
-            "calculated_tags": {
-                "room_type": "bathroom"
-            }
-        }
+        update_data = {"calculated_tags": {"room_type": "bathroom"}}
         response = await async_client.patch(f"/images/{image_id}", json=update_data)
 
         assert response.status_code == status.HTTP_200_OK
@@ -505,7 +497,7 @@ class TestImageCRUDEndpoints:
             "calculated_tags": {
                 "room_type": "living_room",
                 "features": ["sofa", "tv"],
-                "confidence": 0.95
+                "confidence": 0.95,
             }
         }
         response = await async_client.patch(f"/images/{image_id}/tags", json=tags_data)
@@ -524,7 +516,6 @@ class TestImageCRUDEndpoints:
         response = await async_client.patch(f"/images/{image_id}/tags", json=tags_data)
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
 
     # ========================================================================
     # DELETE TESTS
@@ -557,9 +548,7 @@ class TestImageCRUDEndpoints:
         # Create multiple images
         for i in range(3):
             await self.create_test_image(
-                async_client,
-                property_id,
-                f"https://example.com/images/delete{i}.jpg"
+                async_client, property_id, f"https://example.com/images/delete{i}.jpg"
             )
 
         response = await async_client.delete(f"/images/property/{property_id}/all")
@@ -604,7 +593,7 @@ class TestImageCRUDEndpoints:
         # Create image without tags
         image_without_tags = {
             "property_id": property_id,
-            "img_url": "https://example.com/images/search-no-tags.jpg"
+            "img_url": "https://example.com/images/search-no-tags.jpg",
         }
         await async_client.post("/images/", json=image_without_tags)
 
@@ -622,16 +611,10 @@ class TestImageCRUDEndpoints:
 
         for i in range(5):
             await self.create_test_image(
-                async_client,
-                property_id,
-                f"https://example.com/images/search{i}.jpg"
+                async_client, property_id, f"https://example.com/images/search{i}.jpg"
             )
 
-        search_filters = {
-            "property_id": property_id,
-            "skip": 0,
-            "limit": 2
-        }
+        search_filters = {"property_id": property_id, "skip": 0, "limit": 2}
         response = await async_client.post("/images/search", json=search_filters)
 
         assert response.status_code == status.HTTP_200_OK
@@ -704,8 +687,12 @@ class TestImageCRUDEndpoints:
         created_image = await self.create_test_image(async_client, property_id)
 
         expected_fields = [
-            "id", "property_id", "img_url", "calculated_tags",
-            "created_at", "updated_at"
+            "id",
+            "property_id",
+            "img_url",
+            "calculated_tags",
+            "created_at",
+            "updated_at",
         ]
 
         for field in expected_fields:
@@ -716,24 +703,20 @@ class TestImageCRUDEndpoints:
         property_id = await self.create_test_property(async_client)
 
         long_url = "https://example.com/" + "a" * 950 + ".jpg"  # Under 1000 chars
-        image_data = {
-            "property_id": property_id,
-            "img_url": long_url
-        }
+        image_data = {"property_id": property_id, "img_url": long_url}
 
         response = await async_client.post("/images/", json=image_data)
 
         assert response.status_code == status.HTTP_201_CREATED
 
-    async def test_create_image_with_url_exceeding_limit(self, async_client: AsyncClient):
+    async def test_create_image_with_url_exceeding_limit(
+        self, async_client: AsyncClient
+    ):
         """Test creating image with URL exceeding 1000 chars"""
         property_id = await self.create_test_property(async_client)
 
         too_long_url = "https://example.com/" + "a" * 1100 + ".jpg"  # Over 1000
-        image_data = {
-            "property_id": property_id,
-            "img_url": too_long_url
-        }
+        image_data = {"property_id": property_id, "img_url": too_long_url}
 
         response = await async_client.post("/images/", json=image_data)
 
@@ -751,16 +734,13 @@ class TestImageCRUDEndpoints:
                 "features": {
                     "furniture": ["bed", "wardrobe", "nightstand"],
                     "lighting": ["ceiling_light", "bedside_lamp"],
-                    "windows": 2
+                    "windows": 2,
                 },
                 "style": "modern",
                 "colors": ["white", "gray", "blue"],
                 "confidence": 0.94,
-                "metadata": {
-                    "model": "vision-v1",
-                    "timestamp": "2024-01-15T10:30:00Z"
-                }
-            }
+                "metadata": {"model": "vision-v1", "timestamp": "2024-01-15T10:30:00Z"},
+            },
         }
 
         response = await async_client.post("/images/", json=image_data)

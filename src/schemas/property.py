@@ -1,33 +1,44 @@
 import re
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Literal
 from datetime import datetime
 from src.schemas.property_image import ImageResponse
 
 
 class PropertyBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255, description="Property title")
-    address: str = Field(..., min_length=1, max_length=500, description="Property address")
+    address: str = Field(
+        ..., min_length=1, max_length=500, description="Property address"
+    )
     price: float = Field(..., ge=100, description="Property price (minimum $100)")
+    operation_type: Optional[Literal["rent", "sale"]] = Field(
+        None, description="Operation type: rent or sale"
+    )
     bathrooms: int = Field(..., ge=0, description="Number of bathrooms")
     rooms: int = Field(..., ge=0, description="Number of rooms")
-    square_meters: float = Field(..., gt=0, le=10000, description="Property size in square meters (max 10,000)")
-    is_apartment: bool = Field(default=False, description="Is this property an apartment")
+    square_meters: float = Field(
+        ..., gt=0, le=10000, description="Property size in square meters (max 10,000)"
+    )
+    is_apartment: bool = Field(
+        default=False, description="Is this property an apartment"
+    )
     is_house: bool = Field(default=False, description="Is this property a house")
     building_floor: Optional[int] = Field(None, description="Building floor (optional)")
     source_url: str = Field(..., description="URL of the property source")
     is_available: bool = Field(default=True, description="Property availability status")
-    amenities: Optional[Dict[str, Any]] = Field(None, description="Property amenities as JSON")
+    amenities: Optional[Dict[str, Any]] = Field(
+        None, description="Property amenities as JSON"
+    )
 
-    @field_validator('building_floor')
+    @field_validator("building_floor")
     @classmethod
     def validate_building_floor(cls, v):
         if v is not None and v < 0:
-            raise ValueError('Building floor must be non-negative')
+            raise ValueError("Building floor must be non-negative")
         return v
 
-    @field_validator('price')
+    @field_validator("price")
     @classmethod
     def validate_price_reasonable(cls, v):
         """Ensure price is reasonable"""
@@ -35,15 +46,17 @@ class PropertyBase(BaseModel):
             raise ValueError("Price seems unreasonably high. Please verify.")
         return v
 
-    @field_validator('square_meters')
+    @field_validator("square_meters")
     @classmethod
     def validate_square_meters_reasonable(cls, v):
         """Validate square meters is reasonable"""
         if v < 5:
-            raise ValueError("Square meters seems too small (minimum 5 sqm). Please verify.")
+            raise ValueError(
+                "Square meters seems too small (minimum 5 sqm). Please verify."
+            )
         return v
 
-    @field_validator('rooms', 'bathrooms')
+    @field_validator("rooms", "bathrooms")
     @classmethod
     def validate_room_counts_reasonable(cls, v):
         """Validate room/bathroom counts are reasonable"""
@@ -51,7 +64,7 @@ class PropertyBase(BaseModel):
             raise ValueError("Number seems unreasonably high (max 50). Please verify.")
         return v
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_property_type(self):
         """Ensure at least one property type is selected"""
         if not self.is_apartment and not self.is_house:
@@ -67,6 +80,9 @@ class PropertyUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     address: Optional[str] = Field(None, min_length=1, max_length=500)
     price: Optional[float] = Field(None, ge=100)
+    operation_type: Optional[Literal["rent", "sale"]] = Field(
+        None, description="Operation type: rent or sale"
+    )
     bathrooms: Optional[int] = Field(None, ge=0)
     rooms: Optional[int] = Field(None, ge=0)
     square_meters: Optional[float] = Field(None, gt=0, le=10000)
@@ -77,28 +93,30 @@ class PropertyUpdate(BaseModel):
     is_available: Optional[bool] = None
     amenities: Optional[Dict[str, Any]] = None
 
-    @field_validator('building_floor')
+    @field_validator("building_floor")
     @classmethod
     def validate_building_floor(cls, v):
         if v is not None and v < 0:
-            raise ValueError('Building floor must be non-negative')
+            raise ValueError("Building floor must be non-negative")
         return v
 
-    @field_validator('price')
+    @field_validator("price")
     @classmethod
     def validate_price_reasonable(cls, v):
         if v is not None and v > 100_000_000:
             raise ValueError("Price seems unreasonably high. Please verify.")
         return v
 
-    @field_validator('square_meters')
+    @field_validator("square_meters")
     @classmethod
     def validate_square_meters_reasonable(cls, v):
         if v is not None and v < 5:
-            raise ValueError("Square meters seems too small (minimum 5 sqm). Please verify.")
+            raise ValueError(
+                "Square meters seems too small (minimum 5 sqm). Please verify."
+            )
         return v
 
-    @field_validator('rooms', 'bathrooms')
+    @field_validator("rooms", "bathrooms")
     @classmethod
     def validate_room_counts_reasonable(cls, v):
         if v is not None and v > 50:
@@ -110,7 +128,9 @@ class PropertyResponse(PropertyBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    images: Optional[List[ImageResponse]] = Field(default_factory=list, description="Property images")
+    images: Optional[List[ImageResponse]] = Field(
+        default_factory=list, description="Property images"
+    )
 
     class Config:
         from_attributes = True
@@ -131,6 +151,7 @@ class PropertyResponse(PropertyBase):
             except ValueError:
                 # optional fallback if you have python-dateutil installed
                 from dateutil.parser import isoparse
+
                 return isoparse(s)
         return v
 
@@ -141,6 +162,11 @@ class PropertySearchFilters(BaseModel):
     # Property type filters
     is_apartment: Optional[bool] = None
     is_house: Optional[bool] = None
+
+    # Operation type filter
+    operation_type: Optional[Literal["rent", "sale"]] = Field(
+        None, description="Filter by operation type"
+    )
 
     # Price filters
     min_price: Optional[float] = Field(None, ge=0)
@@ -181,12 +207,11 @@ class PropertySearchFilters(BaseModel):
     # Date filters
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-    date_field: Optional[str] = Field('created_at', pattern='^(created_at|updated_at)$')
+    date_field: Optional[str] = Field("created_at", pattern="^(created_at|updated_at)$")
 
     # Ordering
     order_by: Optional[str] = Field(
-        'created_at',
-        pattern='^(price|rooms|square_meters|created_at|updated_at)$'
+        "created_at", pattern="^(price|rooms|square_meters|created_at|updated_at)$"
     )
     ascending: bool = False
 
@@ -194,7 +219,7 @@ class PropertySearchFilters(BaseModel):
     skip: int = Field(0, ge=0)
     limit: int = Field(100, ge=1, le=1000)
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_ranges(self):
         """Validate that min values are not greater than max values"""
 
@@ -216,7 +241,9 @@ class PropertySearchFilters(BaseModel):
         # Square meters range validation
         if self.min_square_meters is not None and self.max_square_meters is not None:
             if self.min_square_meters > self.max_square_meters:
-                raise ValueError("min_square_meters cannot be greater than max_square_meters")
+                raise ValueError(
+                    "min_square_meters cannot be greater than max_square_meters"
+                )
 
         # Floor range validation
         if self.min_floor is not None and self.max_floor is not None:
@@ -232,7 +259,22 @@ class BulkUpdateAvailability(BaseModel):
     property_ids: List[int] = Field(..., min_length=1, max_length=1000)
     is_available: bool
 
-    @field_validator('property_ids')
+    @field_validator("property_ids")
+    @classmethod
+    def validate_unique_ids(cls, v):
+        """Ensure property IDs are unique"""
+        if len(v) != len(set(v)):
+            raise ValueError("Property IDs must be unique")
+        return v
+
+
+class BulkUpdateOperationType(BaseModel):
+    """Schema for bulk operation type updates"""
+
+    property_ids: List[int] = Field(..., min_length=1, max_length=1000)
+    operation_type: Literal["rent", "sale"]
+
+    @field_validator("property_ids")
     @classmethod
     def validate_unique_ids(cls, v):
         """Ensure property IDs are unique"""

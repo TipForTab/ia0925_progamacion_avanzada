@@ -1,5 +1,8 @@
 import pytest
-from src.test.property_fixtures import get_seville_property_fixtures, get_specific_test_properties
+from src.test.property_fixtures import (
+    get_seville_property_fixtures,
+    get_specific_test_properties,
+)
 from src.repositories import PropertyQueryBuilder, PropertyRepository
 
 
@@ -291,15 +294,16 @@ class TestPropertyQueryBuilder:
             property_repo.create(fixture)
 
         builder = PropertyQueryBuilder(test_db)
-        results = (builder
-                   .filter_by_apartment(True)
-                   .filter_by_availability(True)
-                   .filter_by_price_range(100000, 500000)
-                   .filter_by_rooms(2, 4)
-                   .filter_by_square_meters(60, 150)
-                   .order_by_price(ascending=True)
-                   .limit(5)
-                   .all())
+        results = (
+            builder.filter_by_apartment(True)
+            .filter_by_availability(True)
+            .filter_by_price_range(100000, 500000)
+            .filter_by_rooms(2, 4)
+            .filter_by_square_meters(60, 150)
+            .order_by_price(ascending=True)
+            .limit(5)
+            .all()
+        )
 
         assert len(results) <= 5
         for prop in results:
@@ -392,11 +396,7 @@ class TestPropertyRepository:
         test_data = get_specific_test_properties()[0]
         created = property_repo.create(test_data)
 
-        update_data = {
-            "price": 450000.0,
-            "rooms": 4,
-            "is_available": False
-        }
+        update_data = {"price": 450000.0, "rooms": 4, "is_available": False}
 
         updated = property_repo.update(created.id, update_data)
 
@@ -550,13 +550,14 @@ class TestRepositoryDelegation:
             property_repo.create(fixture)
 
         # All these should work via delegation
-        results = (property_repo
-                   .filter_by_apartment(True)
-                   .filter_by_price_range(100000, 400000)
-                   .filter_by_rooms(2, 4)
-                   .order_by_price(ascending=True)
-                   .limit(5)
-                   .all())
+        results = (
+            property_repo.filter_by_apartment(True)
+            .filter_by_price_range(100000, 400000)
+            .filter_by_rooms(2, 4)
+            .order_by_price(ascending=True)
+            .limit(5)
+            .all()
+        )
 
         assert isinstance(results, list)
         assert len(results) <= 5
@@ -591,11 +592,7 @@ class TestRepositoryDelegation:
         assert isinstance(builder, PropertyQueryBuilder)
 
         # Continue chaining on the builder
-        results = (builder
-                   .filter_by_availability(True)
-                   .order_by_price()
-                   .limit(3)
-                   .all())
+        results = builder.filter_by_availability(True).order_by_price().limit(3).all()
 
         assert isinstance(results, list)
 
@@ -609,13 +606,14 @@ class TestPropertySearchScenarios:
         for fixture in fixtures:
             property_repo.create(fixture)
 
-        results = (property_repo
-                   .filter_by_apartment(True)
-                   .filter_by_address("Triana")
-                   .filter_by_price_max(300000)
-                   .filter_by_availability(True)
-                   .order_by_price(ascending=True)
-                   .all())
+        results = (
+            property_repo.filter_by_apartment(True)
+            .filter_by_address("Triana")
+            .filter_by_price_max(300000)
+            .filter_by_availability(True)
+            .order_by_price(ascending=True)
+            .all()
+        )
 
         assert isinstance(results, list)
         for prop in results:
@@ -630,13 +628,14 @@ class TestPropertySearchScenarios:
         for fixture in fixtures:
             property_repo.create(fixture)
 
-        results = (property_repo
-                   .filter_by_house(True)
-                   .filter_by_rooms(3)
-                   .filter_by_price_range(150000, 500000)
-                   .filter_by_availability(True)
-                   .order_by_square_meters(ascending=False)
-                   .all())
+        results = (
+            property_repo.filter_by_house(True)
+            .filter_by_rooms(3)
+            .filter_by_price_range(150000, 500000)
+            .filter_by_availability(True)
+            .order_by_square_meters(ascending=False)
+            .all()
+        )
 
         assert isinstance(results, list)
         for prop in results:
@@ -651,10 +650,11 @@ class TestPropertySearchScenarios:
         for fixture in fixtures:
             property_repo.create(fixture)
 
-        results = (property_repo
-                   .filter_by_address("Centro")
-                   .order_by_price(ascending=True)
-                   .all())
+        results = (
+            property_repo.filter_by_address("Centro")
+            .order_by_price(ascending=True)
+            .all()
+        )
 
         assert isinstance(results, list)
         for prop in results:
@@ -666,12 +666,13 @@ class TestPropertySearchScenarios:
         for fixture in fixtures:
             property_repo.create(fixture)
 
-        results = (property_repo
-                   .filter_by_price_max(200000)
-                   .filter_by_availability(True)
-                   .order_by_square_meters(ascending=False)
-                   .limit(10)
-                   .all())
+        results = (
+            property_repo.filter_by_price_max(200000)
+            .filter_by_availability(True)
+            .order_by_square_meters(ascending=False)
+            .limit(10)
+            .all()
+        )
 
         assert isinstance(results, list)
         assert len(results) <= 10
@@ -685,12 +686,13 @@ class TestPropertySearchScenarios:
         for fixture in fixtures:
             property_repo.create(fixture)
 
-        results = (property_repo
-                   .filter_by_price_min(400000)
-                   .filter_by_square_meters(120)
-                   .filter_by_rooms(3)
-                   .order_by_price(ascending=False)
-                   .all())
+        results = (
+            property_repo.filter_by_price_min(400000)
+            .filter_by_square_meters(120)
+            .filter_by_rooms(3)
+            .order_by_price(ascending=False)
+            .all()
+        )
 
         assert isinstance(results, list)
         for prop in results:
@@ -704,11 +706,12 @@ class TestPropertySearchScenarios:
         for fixture in fixtures:
             property_repo.create(fixture)
 
-        results = (property_repo
-                   .filter_by_floor(0)
-                   .filter_by_availability(True)
-                   .order_by_price(ascending=True)
-                   .all())
+        results = (
+            property_repo.filter_by_floor(0)
+            .filter_by_availability(True)
+            .order_by_price(ascending=True)
+            .all()
+        )
 
         assert isinstance(results, list)
         for prop in results:

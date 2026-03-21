@@ -10,7 +10,7 @@ from src.schemas import (
     ImageUpdate,
     ImageResponse,
     ImageBulkCreate,
-    ImageTagsUpdate
+    ImageTagsUpdate,
 )
 from src.core import log_error, log_debug
 
@@ -29,7 +29,7 @@ def handle_service_errors(operation_name: str):
                 log_error(e, f"Failed to {operation_name}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Failed to {operation_name}"
+                    detail=f"Failed to {operation_name}",
                 )
 
         return wrapper
@@ -58,17 +58,19 @@ class ImageService:
         - property_id > 0
         - URL length constraints
         """
-        log_debug("Creating new image", {
-            "property_id": image_data.property_id,
-            "img_url": image_data.img_url
-        })
+        log_debug(
+            "Creating new image",
+            {"property_id": image_data.property_id, "img_url": image_data.img_url},
+        )
 
         # Business rule: Check if property exists
-        property_exists = await self.property_repository.get_by_id(image_data.property_id)
+        property_exists = await self.property_repository.get_by_id(
+            image_data.property_id
+        )
         if not property_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Property with ID {image_data.property_id} not found"
+                detail=f"Property with ID {image_data.property_id} not found",
             )
 
         # Business rule: Check for duplicate URL for the same property
@@ -76,7 +78,7 @@ class ImageService:
         if existing_image and existing_image.property_id == image_data.property_id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Image with this URL already exists for property {image_data.property_id}"
+                detail=f"Image with this URL already exists for property {image_data.property_id}",
             )
 
         # Create image
@@ -95,16 +97,14 @@ class ImageService:
         if not db_image:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Image with ID {image_id} not found"
+                detail=f"Image with ID {image_id} not found",
             )
 
         return ImageResponse.model_validate(db_image)
 
     @handle_service_errors("get all images")
     async def get_all_images(
-            self,
-            skip: int = 0,
-            limit: int = 100
+        self, skip: int = 0, limit: int = 100
     ) -> List[ImageResponse]:
         """Get all images with pagination"""
         log_debug("Fetching all images", {"skip": skip, "limit": limit})
@@ -114,24 +114,20 @@ class ImageService:
 
     @handle_service_errors("get images by property")
     async def get_images_by_property_id(
-            self,
-            property_id: int,
-            skip: int = 0,
-            limit: int = 100
+        self, property_id: int, skip: int = 0, limit: int = 100
     ) -> List[ImageResponse]:
         """Get all images for a specific property"""
-        log_debug("Fetching images for property", {
-            "property_id": property_id,
-            "skip": skip,
-            "limit": limit
-        })
+        log_debug(
+            "Fetching images for property",
+            {"property_id": property_id, "skip": skip, "limit": limit},
+        )
 
         # Business rule: Check if property exists
         property_exists = await self.property_repository.get_by_id(property_id)
         if not property_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Property with ID {property_id} not found"
+                detail=f"Property with ID {property_id} not found",
             )
 
         images = await self.repository.get_by_property_id(property_id, skip, limit)
@@ -139,9 +135,7 @@ class ImageService:
 
     @handle_service_errors("update image")
     async def update_image(
-            self,
-            image_id: int,
-            update_data: ImageUpdate
+        self, image_id: int, update_data: ImageUpdate
     ) -> ImageResponse:
         """
         Update image.
@@ -155,7 +149,7 @@ class ImageService:
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Image with ID {image_id} not found"
+                detail=f"Image with ID {image_id} not found",
             )
 
         # Get update data
@@ -163,16 +157,18 @@ class ImageService:
         if not update_dict:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No valid fields provided for update"
+                detail="No valid fields provided for update",
             )
 
         # Business rule: If property_id is being updated, check if new property exists
         if update_data.property_id is not None:
-            property_exists = await self.property_repository.get_by_id(update_data.property_id)
+            property_exists = await self.property_repository.get_by_id(
+                update_data.property_id
+            )
             if not property_exists:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Property with ID {update_data.property_id} not found"
+                    detail=f"Property with ID {update_data.property_id} not found",
                 )
 
         # Business rule: Check for duplicate URL if being updated
@@ -183,7 +179,7 @@ class ImageService:
                 if existing_url.property_id == new_property_id:
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
-                        detail="Another image with this URL already exists for this property"
+                        detail="Another image with this URL already exists for this property",
                     )
 
         # Update image
@@ -194,9 +190,7 @@ class ImageService:
 
     @handle_service_errors("update image tags")
     async def update_image_tags(
-            self,
-            image_id: int,
-            tags_data: ImageTagsUpdate
+        self, image_id: int, tags_data: ImageTagsUpdate
     ) -> ImageResponse:
         """
         Update only the calculated_tags field.
@@ -210,11 +204,13 @@ class ImageService:
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Image with ID {image_id} not found"
+                detail=f"Image with ID {image_id} not found",
             )
 
         # Update tags
-        updated_image = await self.repository.update_tags(image_id, tags_data.calculated_tags)
+        updated_image = await self.repository.update_tags(
+            image_id, tags_data.calculated_tags
+        )
 
         log_debug(f"Image tags updated successfully: {image_id}")
         return ImageResponse.model_validate(updated_image)
@@ -231,7 +227,7 @@ class ImageService:
         if not existing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Image with ID {image_id} not found"
+                detail=f"Image with ID {image_id} not found",
             )
 
         success = await self.repository.delete(image_id)
@@ -252,19 +248,20 @@ class ImageService:
         if not property_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Property with ID {property_id} not found"
+                detail=f"Property with ID {property_id} not found",
             )
 
         deleted_count = await self.repository.delete_by_property_id(property_id)
 
-        log_debug(f"Images deleted for property {property_id}", {"count": deleted_count})
-        return {
-            "property_id": property_id,
-            "deleted_count": deleted_count
-        }
+        log_debug(
+            f"Images deleted for property {property_id}", {"count": deleted_count}
+        )
+        return {"property_id": property_id, "deleted_count": deleted_count}
 
     @handle_service_errors("bulk create images")
-    async def bulk_create_images(self, bulk_data: ImageBulkCreate) -> List[ImageResponse]:
+    async def bulk_create_images(
+        self, bulk_data: ImageBulkCreate
+    ) -> List[ImageResponse]:
         """
         Bulk create images for a property.
 
@@ -273,17 +270,22 @@ class ImageService:
         - image_urls list has 1-50 items
         - All URLs are properly formatted
         """
-        log_debug("Bulk creating images", {
-            "property_id": bulk_data.property_id,
-            "image_count": len(bulk_data.image_urls)
-        })
+        log_debug(
+            "Bulk creating images",
+            {
+                "property_id": bulk_data.property_id,
+                "image_count": len(bulk_data.image_urls),
+            },
+        )
 
         # Business rule: Check if property exists
-        property_exists = await self.property_repository.get_by_id(bulk_data.property_id)
+        property_exists = await self.property_repository.get_by_id(
+            bulk_data.property_id
+        )
         if not property_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Property with ID {bulk_data.property_id} not found"
+                detail=f"Property with ID {bulk_data.property_id} not found",
             )
 
         # Business rule: Check for duplicate URLs in the same property
@@ -296,7 +298,7 @@ class ImageService:
         if existing_urls:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Some URLs already exist for this property: {', '.join(list(existing_urls)[:3])}"
+                detail=f"Some URLs already exist for this property: {', '.join(list(existing_urls)[:3])}",
             )
 
         # Prepare images data
@@ -304,7 +306,7 @@ class ImageService:
             {
                 "property_id": bulk_data.property_id,
                 "img_url": url,
-                "calculated_tags": None
+                "calculated_tags": None,
             }
             for url in bulk_data.image_urls
         ]
@@ -324,49 +326,38 @@ class ImageService:
 
         if not image_ids:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No image IDs provided"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="No image IDs provided"
             )
 
         deleted_count = await self.repository.bulk_delete(image_ids)
 
-        return {
-            "deleted_count": deleted_count,
-            "requested_count": len(image_ids)
-        }
+        return {"deleted_count": deleted_count, "requested_count": len(image_ids)}
 
     @handle_service_errors("bulk update tags")
     async def bulk_update_tags(
-            self,
-            image_ids: List[int],
-            tags: Dict[str, Any]
+        self, image_ids: List[int], tags: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Bulk update tags for multiple images.
         """
-        log_debug("Bulk updating tags", {
-            "image_ids_count": len(image_ids),
-            "tags_keys": list(tags.keys())
-        })
+        log_debug(
+            "Bulk updating tags",
+            {"image_ids_count": len(image_ids), "tags_keys": list(tags.keys())},
+        )
 
         if not image_ids:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No image IDs provided"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="No image IDs provided"
             )
 
         if not tags:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Tags cannot be empty"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Tags cannot be empty"
             )
 
         updated_count = await self.repository.bulk_update_tags(image_ids, tags)
 
-        return {
-            "updated_count": updated_count,
-            "requested_count": len(image_ids)
-        }
+        return {"updated_count": updated_count, "requested_count": len(image_ids)}
 
     @handle_service_errors("search images")
     async def search_images(self, filters: Dict[str, Any]) -> List[ImageResponse]:
@@ -390,9 +381,7 @@ class ImageService:
 
     @handle_service_errors("get images without tags")
     async def get_images_without_tags(
-            self,
-            skip: int = 0,
-            limit: int = 100
+        self, skip: int = 0, limit: int = 100
     ) -> List[ImageResponse]:
         """Get images that don't have calculated tags"""
         log_debug("Fetching images without tags", {"skip": skip, "limit": limit})
@@ -424,14 +413,12 @@ class ImageService:
         return {
             "exists": exists,
             "image_id": existing_image.id if existing_image else None,
-            "property_id": existing_image.property_id if existing_image else None
+            "property_id": existing_image.property_id if existing_image else None,
         }
 
     @handle_service_errors("get recent images")
     async def get_recent_images(
-            self,
-            days: int = 7,
-            limit: int = 100
+        self, days: int = 7, limit: int = 100
     ) -> List[ImageResponse]:
         """Get images created in the last N days"""
         log_debug("Fetching recent images", {"days": days, "limit": limit})
@@ -439,13 +426,12 @@ class ImageService:
         if days < 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Days must be at least 1"
+                detail="Days must be at least 1",
             )
 
         if days > 365:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Days cannot exceed 365"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Days cannot exceed 365"
             )
 
         images = await self.repository.get_recent_images(days, limit)
